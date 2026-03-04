@@ -49,13 +49,12 @@ function extractLinks(page: Page, baseOrigin: string): Promise<string[]> {
   return page.evaluate((origin: string) => {
     // This runs in the browser context (DOM available)
     return Array.from(
-      // @ts-ignore: DOM API available in browser context
+      // @ts-expect-error: DOM API available in browser context
       document.querySelectorAll("a[href]"),
     )
       .map((a: unknown) => {
         try {
-          // @ts-ignore: DOM API
-          return new URL(a.href, origin).href;
+          return new URL((a as { href: string }).href, origin).href;
         } catch {
           return null;
         }
