@@ -8,6 +8,7 @@ import { ingestMerchant, type IngestResult } from "./pipeline/ingest.ts";
 import { createLogger, type Logger } from "./utils/logger.ts";
 import { createRateLimiter } from "./middleware/ratelimit.ts";
 import { addCorsHeaders, handlePreflight } from "./middleware/cors.ts";
+import { createApiHandler } from "./api/routes.ts";
 
 function constantTimeAuthCheck(authHeader: string | null, apiKey: string): boolean {
   const expected = new TextEncoder().encode(`Bearer ${apiKey}`);
@@ -47,6 +48,7 @@ export function createHttpHandler(
     windowMs: 60_000,
   });
   const corsOrigin = options?.corsOrigin ?? "*";
+  const apiHandler = createApiHandler(db);
   return async (request: Request): Promise<Response> => {
     const start = Date.now();
     const url = new URL(request.url);
@@ -82,6 +84,10 @@ export function createHttpHandler(
         headers: { "Content-Type": "application/json" },
       }));
     }
+
+    // REST API routes
+    const apiResponse = await apiHandler(request);
+    if (apiResponse) return respond(apiResponse);
 
     if (url.pathname === "/ingest" && request.method === "POST") {
       const rateKey = authHeader ?? "anonymous";
