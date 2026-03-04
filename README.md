@@ -1,51 +1,60 @@
 # Agent Store
 
-**Agent Engine Optimization (AEO) infrastructure** — makes e-commerce product data discoverable and consumable by AI agents via [MCP](https://modelcontextprotocol.io/).
+**Agent Engine Optimization (AEO) infrastructure** — makes e-commerce product
+data discoverable and consumable by AI agents via
+[MCP](https://modelcontextprotocol.io/).
 
-Where SEO optimized websites for search engine crawlers, AEO optimizes data for agentic systems — LLMs, shopping agents, and autonomous commerce protocols that need structured, machine-readable product information to recommend, compare, and transact on behalf of users. In the emerging agent economy, if your products aren't in a format agents can consume, you're invisible.
+Where SEO optimized websites for search engine crawlers, AEO optimizes data for
+agentic systems — LLMs, shopping agents, and autonomous commerce protocols that
+need structured, machine-readable product information to recommend, compare, and
+transact on behalf of users. In the emerging agent economy, if your products
+aren't in a format agents can consume, you're invisible.
 
-Give it a merchant URL — it discovers product pages, extracts compact accessibility tree snapshots, dynamically infers schemas with OpenAI, and stores structured JSON. AI agents query and ingest data through MCP tools or the REST API.
+Give it a merchant URL — it discovers product pages, extracts compact
+accessibility tree snapshots, dynamically infers schemas with OpenAI, and stores
+structured JSON. AI agents query and ingest data through MCP tools or the REST
+API.
 
 ## Architecture
 
 ```
-                        ┌───────────────┐
-                        │  Merchant URL │
-                        └───────┬───────┘
-                                │
-                                ▼
-        ┌─────────────────────────────────────────────────────┐
-        │                 Ingestion Pipeline                  │
-        │                                                     │
-        │  ┌────────────┐    ┌────────────┐    ┌────────────┐ │
-        │  │ Discovery  │    │ Extraction │    │   Brain    │ │
-        │  │ Playwright │───▶│ Agent      │───▶│   OpenAI   │ │
-        │  │ Priority   │    │ Browser    │    │   Dynamic  │ │
-        │  │ queue/dedup│    │ ~200 tk/pg │    │   schemas  │ │
-        │  └────────────┘    └────────────┘    └─────┬──────┘ │
-        │                                            │        │
-        └────────────────────────────────────────────┼────────┘
-                                                     │
-                                                     ▼
-                                              ┌────────────┐
-                                              │  Storage   │
-                                              │  SQLite    │
-                                              │  JSON data │
-                                              └─────┬──────┘
-                                                    │
-                                                    ▼
-                                             ┌──────────────┐
-                                             │   Delivery   │
-                                             │  MCP + REST  │
-                                             └──────┬───────┘
-                                                    │
-                 ┌──────────────────────────────────┼──────────────────────────────────┐
-                 │                                  │                                  │
-                 ▼                                  ▼                                  ▼
-          ┌────────────┐                     ┌────────────┐                     ┌────────────┐
-          │   Claude   │                     │  ChatGPT   │                     │   Custom   │
-          │   Agent    │                     │   Agent    │                     │   Agents   │
-          └────────────┘                     └────────────┘                     └────────────┘
+                ┌───────────────┐
+                │  Merchant URL │
+                └───────┬───────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│                 Ingestion Pipeline                  │
+│                                                     │
+│  ┌────────────┐    ┌────────────┐    ┌────────────┐ │
+│  │ Discovery  │    │ Extraction │    │   Brain    │ │
+│  │ Playwright │───▶│ Agent      │───▶│   OpenAI   │ │
+│  │ Priority   │    │ Browser    │    │   Dynamic  │ │
+│  │ queue/dedup│    │ ~200 tk/pg │    │   schemas  │ │
+│  └────────────┘    └────────────┘    └─────┬──────┘ │
+│                                            │        │
+└────────────────────────────────────────────┼────────┘
+                                             │
+                                             ▼
+                                      ┌────────────┐
+                                      │  Storage   │
+                                      │  SQLite    │
+                                      │  JSON data │
+                                      └─────┬──────┘
+                                            │
+                                            ▼
+                                     ┌──────────────┐
+                                     │   Delivery   │
+                                     │  MCP + REST  │
+                                     └──────┬───────┘
+                                            │
+         ┌──────────────────────────────────┼──────────────────────────────────┐
+         │                                  │                                  │
+         ▼                                  ▼                                  ▼
+  ┌────────────┐                     ┌────────────┐                     ┌────────────┐
+  │   Claude   │                     │  ChatGPT   │                     │   Custom   │
+  │   Agent    │                     │   Agent    │                     │   Agents   │
+  └────────────┘                     └────────────┘                     └────────────┘
 ```
 
 ## Quick Start
@@ -53,7 +62,8 @@ Give it a merchant URL — it discovers product pages, extracts compact accessib
 ### Prerequisites
 
 - [Deno](https://deno.land/) 2.x
-- [Agent Browser](https://www.npmjs.com/package/agent-browser) (`npm install -g agent-browser`)
+- [Agent Browser](https://www.npmjs.com/package/agent-browser)
+  (`npm install -g agent-browser`)
 - An [OpenAI API key](https://platform.openai.com/api-keys)
 
 ### Run Locally
@@ -82,17 +92,17 @@ Full API documentation available at `GET /openapi.json` (unauthenticated).
 
 ### REST Endpoints
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/health` | GET | No | Health check for load balancers / k8s probes |
-| `/openapi.json` | GET | No | OpenAPI 3.1 specification |
-| `/ingest` | POST | Yes | Trigger merchant crawl and extraction (rate limited) |
-| `/api/merchants` | GET | Yes | List all merchants |
-| `/api/merchants/:id` | GET | Yes | Get merchant by ID |
-| `/api/merchants/:id/products` | GET | Yes | List products by merchant (paginated) |
-| `/api/products/search?q=keyword` | GET | Yes | Search products by keyword (paginated) |
-| `/api/products/:id` | GET | Yes | Get product by ID |
-| `/mcp` | POST | Yes | MCP protocol endpoint (streamable HTTP) |
+| Endpoint                         | Method | Auth | Description                                          |
+| -------------------------------- | ------ | ---- | ---------------------------------------------------- |
+| `/health`                        | GET    | No   | Health check for load balancers / k8s probes         |
+| `/openapi.json`                  | GET    | No   | OpenAPI 3.1 specification                            |
+| `/ingest`                        | POST   | Yes  | Trigger merchant crawl and extraction (rate limited) |
+| `/api/merchants`                 | GET    | Yes  | List all merchants                                   |
+| `/api/merchants/:id`             | GET    | Yes  | Get merchant by ID                                   |
+| `/api/merchants/:id/products`    | GET    | Yes  | List products by merchant (paginated)                |
+| `/api/products/search?q=keyword` | GET    | Yes  | Search products by keyword (paginated)               |
+| `/api/products/:id`              | GET    | Yes  | Get product by ID                                    |
+| `/mcp`                           | POST   | Yes  | MCP protocol endpoint (streamable HTTP)              |
 
 ### Ingest a Merchant (REST)
 
@@ -105,11 +115,11 @@ curl -X POST http://localhost:8000/ingest \
 
 ### MCP Tools
 
-| Tool | Description | Input |
-|------|-------------|-------|
-| `list_products` | List all products for a merchant | `merchantId: number` |
-| `search_products` | Search products by keyword | `query: string` |
-| `get_product` | Get a single product by ID | `productId: number` |
+| Tool              | Description                                       | Input                       |
+| ----------------- | ------------------------------------------------- | --------------------------- |
+| `list_products`   | List all products for a merchant                  | `merchantId: number`        |
+| `search_products` | Search products by keyword                        | `query: string`             |
+| `get_product`     | Get a single product by ID                        | `productId: number`         |
 | `ingest_merchant` | Crawl and extract all product data (long-running) | `url: string, name: string` |
 
 ### Example: Connect an MCP Client
@@ -201,25 +211,29 @@ src/
 ## Tech Stack
 
 - **Runtime:** Deno 2.x, TypeScript
-- **Crawling:** [Playwright](https://playwright.dev/) — Direct browser crawling, priority queue, dedup
-- **Extraction:** [Agent Browser](https://www.npmjs.com/package/agent-browser) — Compact accessibility tree snapshots (~200-400 tokens/page)
-- **AI:** OpenAI (`gpt-4o-mini`) — Dynamic schema inference, no hardcoded schemas
+- **Crawling:** [Playwright](https://playwright.dev/) — Direct browser crawling,
+  priority queue, dedup
+- **Extraction:** [Agent Browser](https://www.npmjs.com/package/agent-browser) —
+  Compact accessibility tree snapshots (~200-400 tokens/page)
+- **AI:** OpenAI (`gpt-4o-mini`) — Dynamic schema inference, no hardcoded
+  schemas
 - **Database:** SQLite — WAL mode, JSON storage, parameterized queries
-- **Protocol:** [MCP SDK v2](https://modelcontextprotocol.io/) — Streamable HTTP transport, Zod schemas
+- **Protocol:** [MCP SDK v2](https://modelcontextprotocol.io/) — Streamable HTTP
+  transport, Zod schemas
 - **Container:** Docker with Playwright base image
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `API_KEY` | Yes | — | Bearer token for authenticating requests |
-| `OPENAI_API_KEY` | Yes | — | OpenAI API key for product data extraction |
-| `DB_PATH` | No | `./agent-store.db` | SQLite database file path |
-| `PORT` | No | `8000` | HTTP server port |
-| `CONCURRENCY` | No | `3` | Max concurrent extraction workers (max 20) |
-| `RATE_LIMIT` | No | `5` | Max `/ingest` requests per minute per key |
-| `CORS_ORIGINS` | No | `*` | Allowed CORS origin(s) |
-| `LOG_LEVEL` | No | `info` | Minimum log level (debug, info, warn, error) |
+| Variable         | Required | Default            | Description                                  |
+| ---------------- | -------- | ------------------ | -------------------------------------------- |
+| `API_KEY`        | Yes      | —                  | Bearer token for authenticating requests     |
+| `OPENAI_API_KEY` | Yes      | —                  | OpenAI API key for product data extraction   |
+| `DB_PATH`        | No       | `./agent-store.db` | SQLite database file path                    |
+| `PORT`           | No       | `8000`             | HTTP server port                             |
+| `CONCURRENCY`    | No       | `3`                | Max concurrent extraction workers (max 20)   |
+| `RATE_LIMIT`     | No       | `5`                | Max `/ingest` requests per minute per key    |
+| `CORS_ORIGINS`   | No       | `*`                | Allowed CORS origin(s)                       |
+| `LOG_LEVEL`      | No       | `info`             | Minimum log level (debug, info, warn, error) |
 
 ## License
 

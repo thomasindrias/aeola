@@ -11,7 +11,10 @@ import { addCorsHeaders, handlePreflight } from "./middleware/cors.ts";
 import { createApiHandler } from "./api/routes.ts";
 import { getOpenApiSpec } from "./api/openapi.ts";
 
-function constantTimeAuthCheck(authHeader: string | null, apiKey: string): boolean {
+function constantTimeAuthCheck(
+  authHeader: string | null,
+  apiKey: string,
+): boolean {
   const expected = new TextEncoder().encode(`Bearer ${apiKey}`);
   const actual = new TextEncoder().encode(authHeader ?? "");
   if (expected.length !== actual.length) return false;
@@ -30,9 +33,17 @@ function validateHttpUrl(urlStr: string): string | null {
   }
 }
 
-export type IngestFn = (db: Database, url: string, name: string) => Promise<IngestResult>;
+export type IngestFn = (
+  db: Database,
+  url: string,
+  name: string,
+) => Promise<IngestResult>;
 
-function defaultIngest(db: Database, url: string, name: string): Promise<IngestResult> {
+function defaultIngest(
+  db: Database,
+  url: string,
+  name: string,
+): Promise<IngestResult> {
   const options = buildIngestOptions(url, name);
   return ingestMerchant(db, options);
 }
@@ -40,7 +51,12 @@ function defaultIngest(db: Database, url: string, name: string): Promise<IngestR
 export function createHttpHandler(
   db: Database,
   apiKey: string,
-  options?: { ingestFn?: IngestFn; logger?: Logger; rateLimitMax?: number; corsOrigin?: string },
+  options?: {
+    ingestFn?: IngestFn;
+    logger?: Logger;
+    rateLimitMax?: number;
+    corsOrigin?: string;
+  },
 ) {
   const ingestFn = options?.ingestFn ?? defaultIngest;
   const log = options?.logger ?? createLogger();
@@ -71,72 +87,90 @@ export function createHttpHandler(
 
     // Unauthenticated endpoints
     if (url.pathname === "/openapi.json") {
-      return respond(new Response(JSON.stringify(getOpenApiSpec()), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }));
+      return respond(
+        new Response(JSON.stringify(getOpenApiSpec()), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
     }
 
     if (url.pathname === "/health") {
-      return respond(new Response(JSON.stringify({ status: "ok" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }));
+      return respond(
+        new Response(JSON.stringify({ status: "ok" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
     }
 
     // Auth check for all other endpoints
     const authHeader = request.headers.get("Authorization");
     if (!constantTimeAuthCheck(authHeader, apiKey)) {
-      return respond(new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }));
+      return respond(
+        new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
     }
 
     // REST API routes
-    const apiResponse = await apiHandler(request);
+    const apiResponse = apiHandler(request);
     if (apiResponse) return respond(apiResponse);
 
     if (url.pathname === "/ingest" && request.method === "POST") {
       const rateKey = authHeader ?? "anonymous";
       const rateResult = rateLimiter.check(rateKey);
       if (!rateResult.allowed) {
-        const retryAfter = Math.ceil((rateResult.retryAfterMs ?? 60_000) / 1000);
-        return respond(new Response(JSON.stringify({ error: "Too Many Requests" }), {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Retry-After": String(retryAfter),
-          },
-        }));
+        const retryAfter = Math.ceil(
+          (rateResult.retryAfterMs ?? 60_000) / 1000,
+        );
+        return respond(
+          new Response(JSON.stringify({ error: "Too Many Requests" }), {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+              "Retry-After": String(retryAfter),
+            },
+          }),
+        );
       }
       let body: { url?: string; name?: string };
       try {
         body = await request.json();
       } catch {
-        return respond(new Response(JSON.stringify({ error: "Invalid JSON" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }));
+        return respond(
+          new Response(JSON.stringify({ error: "Invalid JSON" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
       }
       if (!body.url || !body.name) {
-        return respond(new Response(JSON.stringify({ error: "url and name are required" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }));
+        return respond(
+          new Response(JSON.stringify({ error: "url and name are required" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
       }
       const urlError = validateHttpUrl(body.url);
       if (urlError) {
-        return respond(new Response(JSON.stringify({ error: urlError }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }));
+        return respond(
+          new Response(JSON.stringify({ error: urlError }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
       }
       const result = await ingestFn(db, body.url, body.name);
-      return respond(new Response(JSON.stringify(result), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }));
+      return respond(
+        new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
     }
 
     if (url.pathname === "/mcp") {
@@ -144,10 +178,12 @@ export function createHttpHandler(
       try {
         body = await request.json();
       } catch {
-        return respond(new Response(JSON.stringify({ error: "Invalid JSON" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }));
+        return respond(
+          new Response(JSON.stringify({ error: "Invalid JSON" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
       }
       // Create a fresh server + transport per request (stateless mode)
       const server = createMcpServer(db);
@@ -158,16 +194,23 @@ export function createHttpHandler(
       return await transport.handleRequest(request, { parsedBody: body });
     }
 
-    return respond(new Response(JSON.stringify({ error: "Not Found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    }));
+    return respond(
+      new Response(JSON.stringify({ error: "Not Found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
   };
 }
 
 // Main entry point — wires real dependencies
 if (import.meta.main) {
-  const logLevel = Deno.env.get("LOG_LEVEL") as "debug" | "info" | "warn" | "error" | undefined;
+  const logLevel = Deno.env.get("LOG_LEVEL") as
+    | "debug"
+    | "info"
+    | "warn"
+    | "error"
+    | undefined;
   const log = createLogger(logLevel);
 
   const apiKey = Deno.env.get("API_KEY");
@@ -180,7 +223,11 @@ if (import.meta.main) {
   const db = createDatabase(dbPath);
   const rateLimitMax = parseInt(Deno.env.get("RATE_LIMIT") ?? "5");
   const corsOrigin = Deno.env.get("CORS_ORIGINS") ?? "*";
-  const handler = createHttpHandler(db, apiKey, { logger: log, rateLimitMax, corsOrigin });
+  const handler = createHttpHandler(db, apiKey, {
+    logger: log,
+    rateLimitMax,
+    corsOrigin,
+  });
   const port = parseInt(Deno.env.get("PORT") ?? "8000");
 
   log.info("server started", { port, dbPath });

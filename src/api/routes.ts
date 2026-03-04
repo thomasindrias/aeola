@@ -1,14 +1,14 @@
 import type { Database } from "@db/sqlite";
 import {
+  getMerchant,
   getProduct,
   getProductsByMerchant,
-  getMerchant,
   listMerchants,
   searchProducts,
 } from "../storage/db.ts";
 
 export function createApiHandler(db: Database) {
-  return async (request: Request): Promise<Response | null> => {
+  return (request: Request): Response | null => {
     const url = new URL(request.url);
     const path = url.pathname;
 

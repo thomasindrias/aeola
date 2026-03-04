@@ -82,11 +82,12 @@ Create `fly.toml`:
 
 ## Resource Requirements
 
-| Concurrency | RAM   | CPU   | Notes                          |
-|-------------|-------|-------|--------------------------------|
-| 1           | 256MB | 0.5   | Minimum for light usage        |
-| 3 (default) | 512MB | 1.0   | Recommended for most workloads |
-| 10          | 1GB   | 2.0   | High-throughput ingestion      |
-| 20 (max)    | 2GB   | 4.0   | Maximum extraction parallelism |
+| Concurrency | RAM   | CPU | Notes                          |
+| ----------- | ----- | --- | ------------------------------ |
+| 1           | 256MB | 0.5 | Minimum for light usage        |
+| 3 (default) | 512MB | 1.0 | Recommended for most workloads |
+| 10          | 1GB   | 2.0 | High-throughput ingestion      |
+| 20 (max)    | 2GB   | 4.0 | Maximum extraction parallelism |
 
-Note: Discovery (Playwright) always runs serially. Concurrency applies to the extraction phase only.
+Note: Discovery (Playwright) always runs serially. Concurrency applies to the
+extraction phase only.

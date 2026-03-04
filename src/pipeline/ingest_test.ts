@@ -1,4 +1,4 @@
-import { describe, it, afterEach } from "@std/testing/bdd";
+import { afterEach, describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
 import { ingestMerchant } from "./ingest.ts";
 import { createDatabase, getProductsByMerchant } from "../storage/db.ts";
@@ -16,15 +16,23 @@ describe("Ingestion Pipeline", () => {
     const result = await ingestMerchant(db, {
       url: "https://shop.example.com",
       name: "Example Shop",
-      discover: () => Promise.resolve([
-        "https://shop.example.com/product/1",
-        "https://shop.example.com/product/2",
-      ]),
-      extractSnapshot: (url) => Promise.resolve(`@e1 [heading] "Product from ${url}" [level=1]\n@e2 [text] "Price: $29.99"`),
-      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({
-        schema: { type: "product", properties: { name: "string", price: "number" } },
-        data: { name: "Blue T-Shirt", price: 29.99 },
-      }),
+      discover: () =>
+        Promise.resolve([
+          "https://shop.example.com/product/1",
+          "https://shop.example.com/product/2",
+        ]),
+      extractSnapshot: (url) =>
+        Promise.resolve(
+          `@e1 [heading] "Product from ${url}" [level=1]\n@e2 [text] "Price: $29.99"`,
+        ),
+      processWithLLM: (_client, _snapshot, _sourceUrl) =>
+        Promise.resolve({
+          schema: {
+            type: "product",
+            properties: { name: "string", price: "number" },
+          },
+          data: { name: "Blue T-Shirt", price: 29.99 },
+        }),
     });
 
     assertEquals(result.productsIngested, 2);
@@ -40,19 +48,23 @@ describe("Ingestion Pipeline", () => {
     const result = await ingestMerchant(db, {
       url: "https://shop.example.com",
       name: "Example Shop",
-      discover: () => Promise.resolve([
-        "https://shop.example.com/product/1",
-        "https://shop.example.com/product/2",
-      ]),
+      discover: () =>
+        Promise.resolve([
+          "https://shop.example.com/product/1",
+          "https://shop.example.com/product/2",
+        ]),
       extractSnapshot: (_url) => {
         callCount++;
-        if (callCount === 1) return Promise.reject(new Error("Snapshot failed"));
+        if (callCount === 1) {
+          return Promise.reject(new Error("Snapshot failed"));
+        }
         return Promise.resolve(`@e1 [heading] "Widget" [level=1]`);
       },
-      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({
-        schema: { type: "product" },
-        data: { name: "Widget", price: 10 },
-      }),
+      processWithLLM: (_client, _snapshot, _sourceUrl) =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", price: 10 },
+        }),
     });
 
     assertEquals(result.productsIngested, 1);
@@ -68,7 +80,8 @@ describe("Ingestion Pipeline", () => {
       name: "Empty Shop",
       discover: () => Promise.resolve([]),
       extractSnapshot: () => Promise.resolve(""),
-      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({ schema: {}, data: {} }),
+      processWithLLM: (_client, _snapshot, _sourceUrl) =>
+        Promise.resolve({ schema: {}, data: {} }),
     });
 
     assertEquals(result.productsIngested, 0);
@@ -82,10 +95,14 @@ describe("Ingestion Pipeline", () => {
     const result = await ingestMerchant(db, {
       url: "https://shop.example.com",
       name: "URL Test Shop",
-      discover: () => Promise.resolve([
-        "https://shop.example.com/product/abc",
-      ]),
-      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product" [level=1]\n@e2 [text] "Price: $29.99"`),
+      discover: () =>
+        Promise.resolve([
+          "https://shop.example.com/product/abc",
+        ]),
+      extractSnapshot: () =>
+        Promise.resolve(
+          `@e1 [heading] "Product" [level=1]\n@e2 [text] "Price: $29.99"`,
+        ),
       processWithLLM: (_client, _snapshot, sourceUrl) => {
         receivedUrls.push(sourceUrl);
         return Promise.resolve({
@@ -104,7 +121,10 @@ describe("Ingestion Pipeline", () => {
     let maxConcurrent = 0;
     let currentConcurrent = 0;
 
-    const urls = Array.from({ length: 10 }, (_, i) => `https://shop.example.com/product/${i}`);
+    const urls = Array.from(
+      { length: 10 },
+      (_, i) => `https://shop.example.com/product/${i}`,
+    );
 
     const result = await ingestMerchant(db, {
       url: "https://shop.example.com",
@@ -112,16 +132,19 @@ describe("Ingestion Pipeline", () => {
       discover: () => Promise.resolve(urls),
       extractSnapshot: async (_url) => {
         currentConcurrent++;
-        if (currentConcurrent > maxConcurrent) maxConcurrent = currentConcurrent;
+        if (currentConcurrent > maxConcurrent) {
+          maxConcurrent = currentConcurrent;
+        }
         // Simulate async work
         await new Promise((r) => setTimeout(r, 10));
         currentConcurrent--;
         return `@e1 [heading] "Product" [level=1]`;
       },
-      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({
-        schema: { type: "product" },
-        data: { name: "Widget", price: 5 },
-      }),
+      processWithLLM: (_client, _snapshot, _sourceUrl) =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", price: 5 },
+        }),
       concurrency: 3,
     });
 

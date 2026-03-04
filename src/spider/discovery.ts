@@ -34,7 +34,9 @@ export function isProductUrl(url: string, baseUrl: string): boolean {
     const parsed = new URL(url);
     const base = new URL(baseUrl);
     if (parsed.hostname !== base.hostname) return false;
-    return PRODUCT_PATH_PATTERNS.some((pattern) => pattern.test(parsed.pathname));
+    return PRODUCT_PATH_PATTERNS.some((pattern) =>
+      pattern.test(parsed.pathname)
+    );
   } catch {
     return false;
   }
@@ -58,7 +60,9 @@ function extractLinks(page: Page, baseOrigin: string): Promise<string[]> {
           return null;
         }
       })
-      .filter((href: unknown): href is string => href !== null && typeof href === "string" && href.startsWith(origin));
+      .filter((href: unknown): href is string =>
+        href !== null && typeof href === "string" && href.startsWith(origin)
+      );
   }, baseOrigin);
 }
 
@@ -90,13 +94,19 @@ export async function discoverProductUrls(
       visited.add(url);
 
       try {
-        await retry(() => page.goto(url, { timeout: 30000, waitUntil: "domcontentloaded" }), { maxAttempts: 2, baseDelayMs: 500 });
+        await retry(
+          () =>
+            page.goto(url, { timeout: 30000, waitUntil: "domcontentloaded" }),
+          { maxAttempts: 2, baseDelayMs: 500 },
+        );
         consecutiveErrors = 0;
       } catch {
         consecutiveErrors++;
         // Replace page after 3 consecutive navigation failures
         if (consecutiveErrors >= 3) {
-          try { await page.close(); } catch { /* ignore */ }
+          try {
+            await page.close();
+          } catch { /* ignore */ }
           page = await browser.newPage();
           consecutiveErrors = 0;
         }

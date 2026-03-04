@@ -15,28 +15,91 @@ describe("Spider - URL Discovery", () => {
 
   describe("isProductUrl", () => {
     it("should match product-like URLs", () => {
-      assertEquals(isProductUrl("https://shop.example.com/product/blue-shirt", "https://shop.example.com"), true);
-      assertEquals(isProductUrl("https://shop.example.com/products/widget-123", "https://shop.example.com"), true);
-      assertEquals(isProductUrl("https://shop.example.com/items/gadget", "https://shop.example.com"), true);
-      assertEquals(isProductUrl("https://shop.example.com/p/12345", "https://shop.example.com"), true);
-      assertEquals(isProductUrl("https://shop.example.com/collections/summer/blue-shirt", "https://shop.example.com"), true);
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/product/blue-shirt",
+          "https://shop.example.com",
+        ),
+        true,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/products/widget-123",
+          "https://shop.example.com",
+        ),
+        true,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/items/gadget",
+          "https://shop.example.com",
+        ),
+        true,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/p/12345",
+          "https://shop.example.com",
+        ),
+        true,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/collections/summer/blue-shirt",
+          "https://shop.example.com",
+        ),
+        true,
+      );
     });
 
     it("should reject non-product URLs", () => {
-      assertEquals(isProductUrl("https://shop.example.com/about", "https://shop.example.com"), false);
-      assertEquals(isProductUrl("https://shop.example.com/contact", "https://shop.example.com"), false);
-      assertEquals(isProductUrl("https://shop.example.com/cart", "https://shop.example.com"), false);
-      assertEquals(isProductUrl("https://shop.example.com/login", "https://shop.example.com"), false);
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/about",
+          "https://shop.example.com",
+        ),
+        false,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/contact",
+          "https://shop.example.com",
+        ),
+        false,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/cart",
+          "https://shop.example.com",
+        ),
+        false,
+      );
+      assertEquals(
+        isProductUrl(
+          "https://shop.example.com/login",
+          "https://shop.example.com",
+        ),
+        false,
+      );
     });
 
     it("should reject cross-domain URLs", () => {
-      assertEquals(isProductUrl("https://other.com/product/1", "https://shop.example.com"), false);
+      assertEquals(
+        isProductUrl("https://other.com/product/1", "https://shop.example.com"),
+        false,
+      );
     });
 
     it("should handle malformed URLs gracefully", () => {
-      assertEquals(isProductUrl("not-a-url", "https://shop.example.com"), false);
+      assertEquals(
+        isProductUrl("not-a-url", "https://shop.example.com"),
+        false,
+      );
       assertEquals(isProductUrl("", "https://shop.example.com"), false);
-      assertEquals(isProductUrl("javascript:void(0)", "https://shop.example.com"), false);
+      assertEquals(
+        isProductUrl("javascript:void(0)", "https://shop.example.com"),
+        false,
+      );
     });
   });
 });

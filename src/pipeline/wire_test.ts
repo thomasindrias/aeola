@@ -1,4 +1,4 @@
-import { describe, it, afterEach } from "@std/testing/bdd";
+import { afterEach, describe, it } from "@std/testing/bdd";
 import { assertEquals, assertExists } from "@std/assert";
 import { buildIngestOptions } from "./wire.ts";
 

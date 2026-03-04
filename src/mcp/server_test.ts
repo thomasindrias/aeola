@@ -1,9 +1,9 @@
-import { describe, it, afterEach } from "@std/testing/bdd";
-import { assertExists, assertEquals } from "@std/assert";
+import { afterEach, describe, it } from "@std/testing/bdd";
+import { assertEquals, assertExists } from "@std/assert";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "./server.ts";
-import { createDatabase, addMerchant, addProduct } from "../storage/db.ts";
+import { addMerchant, addProduct, createDatabase } from "../storage/db.ts";
 
 async function createTestClient(
   db: ReturnType<typeof createDatabase>,
@@ -11,7 +11,8 @@ async function createTestClient(
 ) {
   const server = createMcpServer(db, options);
   const client = new Client({ name: "test-client", version: "1.0.0" });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] = InMemoryTransport
+    .createLinkedPair();
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   return client;
@@ -43,7 +44,10 @@ describe("MCP Server", () => {
 
   it("should call list_products tool via MCP protocol", async () => {
     db = createDatabase(":memory:");
-    const merchantId = addMerchant(db, { url: "https://example.com", name: "Test" });
+    const merchantId = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
     addProduct(db, {
       merchantId,
       sourceUrl: "https://example.com/p/1",
@@ -51,8 +55,13 @@ describe("MCP Server", () => {
       schema: { type: "product" },
     });
     const client = await createTestClient(db);
-    const result = await client.callTool({ name: "list_products", arguments: { merchantId } });
-    const products = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    const result = await client.callTool({
+      name: "list_products",
+      arguments: { merchantId },
+    });
+    const products = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
     assertEquals(products.length, 1);
     assertEquals(products[0].data.name, "Widget");
     assertEquals(products[0].data.price, 9.99);
@@ -61,12 +70,30 @@ describe("MCP Server", () => {
 
   it("should call search_products tool via MCP protocol", async () => {
     db = createDatabase(":memory:");
-    const merchantId = addMerchant(db, { url: "https://example.com", name: "Test" });
-    addProduct(db, { merchantId, sourceUrl: "https://example.com/p/1", data: { name: "Blue Widget" }, schema: { type: "product" } });
-    addProduct(db, { merchantId, sourceUrl: "https://example.com/p/2", data: { name: "Red Gadget" }, schema: { type: "product" } });
+    const merchantId = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
+    addProduct(db, {
+      merchantId,
+      sourceUrl: "https://example.com/p/1",
+      data: { name: "Blue Widget" },
+      schema: { type: "product" },
+    });
+    addProduct(db, {
+      merchantId,
+      sourceUrl: "https://example.com/p/2",
+      data: { name: "Red Gadget" },
+      schema: { type: "product" },
+    });
     const client = await createTestClient(db);
-    const result = await client.callTool({ name: "search_products", arguments: { query: "blue" } });
-    const products = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    const result = await client.callTool({
+      name: "search_products",
+      arguments: { query: "blue" },
+    });
+    const products = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
     assertEquals(products.length, 1);
     assertEquals(products[0].data.name, "Blue Widget");
     await client.close();
@@ -74,11 +101,24 @@ describe("MCP Server", () => {
 
   it("should call get_product tool via MCP protocol", async () => {
     db = createDatabase(":memory:");
-    const merchantId = addMerchant(db, { url: "https://example.com", name: "Test" });
-    const productId = addProduct(db, { merchantId, sourceUrl: "https://example.com/p/1", data: { name: "Widget" }, schema: { type: "product" } });
+    const merchantId = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
+    const productId = addProduct(db, {
+      merchantId,
+      sourceUrl: "https://example.com/p/1",
+      data: { name: "Widget" },
+      schema: { type: "product" },
+    });
     const client = await createTestClient(db);
-    const result = await client.callTool({ name: "get_product", arguments: { productId } });
-    const product = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    const result = await client.callTool({
+      name: "get_product",
+      arguments: { productId },
+    });
+    const product = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
     assertEquals(product.data.name, "Widget");
     await client.close();
   });
@@ -98,15 +138,25 @@ describe("MCP Server", () => {
     const client = await createTestClient(db, {
       ingestFn: (_db, url, name) => {
         calledWith = { url, name };
-        return Promise.resolve({ merchantId: 1, productsIngested: 0, urlsDiscovered: 0, errors: [] });
+        return Promise.resolve({
+          merchantId: 1,
+          productsIngested: 0,
+          urlsDiscovered: 0,
+          errors: [],
+        });
       },
     });
     const result = await client.callTool({
       name: "ingest_merchant",
       arguments: { url: "https://shop.example.com", name: "Test Shop" },
     });
-    const body = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
-    assertEquals(calledWith, { url: "https://shop.example.com", name: "Test Shop" });
+    const body = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
+    assertEquals(calledWith, {
+      url: "https://shop.example.com",
+      name: "Test Shop",
+    });
     assertEquals(body.merchantId, 1);
     await client.close();
   });
@@ -123,7 +173,9 @@ describe("MCP Server", () => {
       arguments: { url: "file:///etc/passwd", name: "Evil" },
     });
     assertEquals(result.isError, true);
-    const body = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    const body = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
     assertEquals(body.error, "Only http/https URLs are supported");
     await client.close();
   });
@@ -131,8 +183,13 @@ describe("MCP Server", () => {
   it("should return error for non-existent product via MCP protocol", async () => {
     db = createDatabase(":memory:");
     const client = await createTestClient(db);
-    const result = await client.callTool({ name: "get_product", arguments: { productId: 999 } });
-    const body = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    const result = await client.callTool({
+      name: "get_product",
+      arguments: { productId: 999 },
+    });
+    const body = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
     assertEquals(body.error, "Product not found");
     await client.close();
   });

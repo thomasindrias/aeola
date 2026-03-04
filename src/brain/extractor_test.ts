@@ -8,9 +8,10 @@ function createMockOpenAI(mockResponse: string | null): OpenAI {
   return {
     chat: {
       completions: {
-        create: () => Promise.resolve({
-          choices: [{ message: { content: mockResponse } }],
-        }),
+        create: () =>
+          Promise.resolve({
+            choices: [{ message: { content: mockResponse } }],
+          }),
       },
     },
   } as unknown as OpenAI;
@@ -93,7 +94,9 @@ describe("Brain - Dynamic Extractor", () => {
       const mockClient = {
         chat: {
           completions: {
-            create: (params: { messages: Array<{ role: string; content: string }> }) => {
+            create: (
+              params: { messages: Array<{ role: string; content: string }> },
+            ) => {
               capturedMessages = params.messages;
               return Promise.resolve({
                 choices: [{ message: { content: VALID_EXTRACTION } }],
@@ -120,7 +123,9 @@ describe("Brain - Dynamic Extractor", () => {
       const mockClient = {
         chat: {
           completions: {
-            create: (params: { messages: Array<{ role: string; content: string }> }) => {
+            create: (
+              params: { messages: Array<{ role: string; content: string }> },
+            ) => {
               capturedMessages = params.messages;
               return Promise.resolve({
                 choices: [{ message: { content: VALID_EXTRACTION } }],

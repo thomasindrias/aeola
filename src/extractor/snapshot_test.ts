@@ -1,6 +1,11 @@
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
-import { CONTENT_SELECTORS, getPageSnapshot, parseSnapshotText, tryScopedSnapshot } from "./snapshot.ts";
+import {
+  CONTENT_SELECTORS,
+  getPageSnapshot,
+  parseSnapshotText,
+  tryScopedSnapshot,
+} from "./snapshot.ts";
 
 // Sample agent-browser snapshot output (compact accessibility tree format)
 const SAMPLE_SNAPSHOT = `@e1 [heading] "Blue Cotton T-Shirt" [level=1]
@@ -30,36 +35,42 @@ describe("Extractor - Agent Browser Snapshots", () => {
 
   describe("tryScopedSnapshot", () => {
     it("should return snapshot when selector matches content over 50 chars", async () => {
-      const longContent = `@e1 [heading] "Product Name Here" [level=1]\n@e2 [text] "Price: $29.99"`;
-      const mockCmd = (_args: string[]) => Promise.resolve({
-        success: true,
-        stdout: longContent,
-      });
+      const longContent =
+        `@e1 [heading] "Product Name Here" [level=1]\n@e2 [text] "Price: $29.99"`;
+      const mockCmd = (_args: string[]) =>
+        Promise.resolve({
+          success: true,
+          stdout: longContent,
+        });
       const result = await tryScopedSnapshot("main", mockCmd);
       assertExists(result);
       assertEquals(result!.includes("Product Name"), true);
     });
 
     it("should return null when selector returns content under 50 chars", async () => {
-      const mockCmd = (_args: string[]) => Promise.resolve({
-        success: true,
-        stdout: "short output",
-      });
+      const mockCmd = (_args: string[]) =>
+        Promise.resolve({
+          success: true,
+          stdout: "short output",
+        });
       const result = await tryScopedSnapshot("main", mockCmd);
       assertEquals(result, null);
     });
 
     it("should return null when command fails", async () => {
-      const mockCmd = (_args: string[]) => Promise.resolve({
-        success: false,
-        stdout: "",
-      });
+      const mockCmd = (_args: string[]) =>
+        Promise.resolve({
+          success: false,
+          stdout: "",
+        });
       const result = await tryScopedSnapshot(".nonexistent", mockCmd);
       assertEquals(result, null);
     });
 
     it("should return null when command throws", async () => {
-      const mockCmd = (_args: string[]): Promise<{ success: boolean; stdout: string }> => {
+      const mockCmd = (
+        _args: string[],
+      ): Promise<{ success: boolean; stdout: string }> => {
         throw new Error("command not found");
       };
       const result = await tryScopedSnapshot("main", mockCmd);
@@ -93,7 +104,10 @@ describe("Extractor - Agent Browser Snapshots", () => {
         return Promise.resolve(SAMPLE_SNAPSHOT);
       };
 
-      const result = await getPageSnapshot("https://example.com/product/1", mockExecutor);
+      const result = await getPageSnapshot(
+        "https://example.com/product/1",
+        mockExecutor,
+      );
       assertExists(result);
       assertEquals(result.includes("Blue Cotton T-Shirt"), true);
     });

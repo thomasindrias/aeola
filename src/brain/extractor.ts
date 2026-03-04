@@ -6,7 +6,8 @@ export interface ExtractionResult {
   data: Record<string, unknown>;
 }
 
-const SYSTEM_PROMPT = `You are a product data extraction engine. You receive compact accessibility tree snapshots from e-commerce product pages. Each line contains an element reference, role, and text content.
+const SYSTEM_PROMPT =
+  `You are a product data extraction engine. You receive compact accessibility tree snapshots from e-commerce product pages. Each line contains an element reference, role, and text content.
 
 Your task:
 1. Dynamically infer the most logical JSON schema for this product

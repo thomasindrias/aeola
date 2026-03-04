@@ -1,6 +1,6 @@
-import { describe, it, afterEach } from "@std/testing/bdd";
+import { afterEach, describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
-import { createDatabase, addMerchant, addProduct } from "../storage/db.ts";
+import { addMerchant, addProduct, createDatabase } from "../storage/db.ts";
 import { createApiHandler } from "./routes.ts";
 
 describe("REST API", () => {

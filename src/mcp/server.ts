@@ -1,18 +1,32 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Database } from "@db/sqlite";
-import { getProductsByMerchant, searchProducts, getProduct } from "../storage/db.ts";
+import {
+  getProduct,
+  getProductsByMerchant,
+  searchProducts,
+} from "../storage/db.ts";
 import { buildIngestOptions } from "../pipeline/wire.ts";
 import { ingestMerchant, type IngestResult } from "../pipeline/ingest.ts";
 
-async function defaultIngest(db: Database, url: string, name: string): Promise<IngestResult> {
+async function defaultIngest(
+  db: Database,
+  url: string,
+  name: string,
+): Promise<IngestResult> {
   const options = buildIngestOptions(url, name);
   return await ingestMerchant(db, options);
 }
 
 export function createMcpServer(
   db: Database,
-  options?: { ingestFn?: (db: Database, url: string, name: string) => Promise<IngestResult> },
+  options?: {
+    ingestFn?: (
+      db: Database,
+      url: string,
+      name: string,
+    ) => Promise<IngestResult>;
+  },
 ): McpServer {
   const ingestFn = options?.ingestFn ?? defaultIngest;
   const server = new McpServer({
@@ -30,7 +44,9 @@ export function createMcpServer(
     },
     ({ merchantId }) => {
       const products = getProductsByMerchant(db, merchantId);
-      return { content: [{ type: "text" as const, text: JSON.stringify(products) }] };
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(products) }],
+      };
     },
   );
 
@@ -44,7 +60,9 @@ export function createMcpServer(
     },
     ({ query }) => {
       const products = searchProducts(db, query);
-      return { content: [{ type: "text" as const, text: JSON.stringify(products) }] };
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(products) }],
+      };
     },
   );
 
@@ -59,9 +77,16 @@ export function createMcpServer(
     ({ productId }) => {
       const product = getProduct(db, productId);
       if (!product) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Product not found" }) }] };
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({ error: "Product not found" }),
+          }],
+        };
       }
-      return { content: [{ type: "text" as const, text: JSON.stringify(product) }] };
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(product) }],
+      };
     },
   );
 
@@ -79,10 +104,24 @@ export function createMcpServer(
       try {
         const parsed = new URL(url);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-          return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Only http/https URLs are supported" }) }], isError: true };
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                error: "Only http/https URLs are supported",
+              }),
+            }],
+            isError: true,
+          };
         }
       } catch {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Invalid URL" }) }], isError: true };
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({ error: "Invalid URL" }),
+          }],
+          isError: true,
+        };
       }
       const result = await ingestFn(db, url, name);
       return {

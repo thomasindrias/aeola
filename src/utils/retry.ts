@@ -8,7 +8,8 @@ export async function retry<T>(
   fn: () => Promise<T>,
   opts: RetryOptions = {},
 ): Promise<T> {
-  const { maxAttempts = 3, baseDelayMs = 1000, shouldRetry = () => true } = opts;
+  const { maxAttempts = 3, baseDelayMs = 1000, shouldRetry = () => true } =
+    opts;
   let lastError: Error | undefined;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {

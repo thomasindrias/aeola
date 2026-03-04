@@ -26,7 +26,11 @@ describe("retry", () => {
 
   it("should throw after max attempts exhausted", async () => {
     await assertRejects(
-      () => retry(() => Promise.reject(new Error("permanent")), { maxAttempts: 2, baseDelayMs: 1 }),
+      () =>
+        retry(() => Promise.reject(new Error("permanent")), {
+          maxAttempts: 2,
+          baseDelayMs: 1,
+        }),
       Error,
       "permanent",
     );

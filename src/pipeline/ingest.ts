@@ -1,5 +1,5 @@
 import type { Database } from "@db/sqlite";
-import { getOrCreateMerchant, addProduct } from "../storage/db.ts";
+import { addProduct, getOrCreateMerchant } from "../storage/db.ts";
 import type { Logger } from "../utils/logger.ts";
 
 export interface IngestOptions {
@@ -11,7 +11,9 @@ export interface IngestOptions {
     client: unknown,
     snapshotText: string,
     sourceUrl: string,
-  ) => Promise<{ schema: Record<string, unknown>; data: Record<string, unknown> }>;
+  ) => Promise<
+    { schema: Record<string, unknown>; data: Record<string, unknown> }
+  >;
   openaiClient?: unknown;
   concurrency?: number;
   logger?: Logger;
@@ -49,7 +51,16 @@ export async function ingestMerchant(
   db: Database,
   options: IngestOptions,
 ): Promise<IngestResult> {
-  const { url, name, discover, extractSnapshot, processWithLLM, openaiClient, concurrency = 5, logger: log } = options;
+  const {
+    url,
+    name,
+    discover,
+    extractSnapshot,
+    processWithLLM,
+    openaiClient,
+    concurrency = 5,
+    logger: log,
+  } = options;
 
   const merchantId = getOrCreateMerchant(db, { url, name });
 
@@ -64,7 +75,11 @@ export async function ingestMerchant(
   await processWithConcurrency(productUrls, concurrency, async (productUrl) => {
     try {
       const snapshotText = await extractSnapshot(productUrl);
-      const { schema, data } = await processWithLLM(openaiClient, snapshotText, productUrl);
+      const { schema, data } = await processWithLLM(
+        openaiClient,
+        snapshotText,
+        productUrl,
+      );
       addProduct(db, { merchantId, sourceUrl: productUrl, data, schema });
       productsIngested++;
     } catch (e) {
@@ -74,6 +89,15 @@ export async function ingestMerchant(
     }
   });
 
-  log?.info("ingest complete", { url, productsIngested, errors: errors.length });
-  return { merchantId, productsIngested, urlsDiscovered: productUrls.length, errors };
+  log?.info("ingest complete", {
+    url,
+    productsIngested,
+    errors: errors.length,
+  });
+  return {
+    merchantId,
+    productsIngested,
+    urlsDiscovered: productUrls.length,
+    errors,
+  };
 }

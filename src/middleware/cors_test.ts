@@ -19,7 +19,10 @@ describe("CORS", () => {
   });
 
   it("should use configured origin", () => {
-    const response = addCorsHeaders(new Response("ok"), "https://app.example.com");
+    const response = addCorsHeaders(
+      new Response("ok"),
+      "https://app.example.com",
+    );
     assertEquals(
       response.headers.get("Access-Control-Allow-Origin"),
       "https://app.example.com",
