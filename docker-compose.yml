@@ -1,15 +1,15 @@
 services:
-  agentstore:
+  agent-store:
     build: .
     ports:
       - "8000:8000"
     environment:
       - API_KEY=${API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DB_PATH=/app/data/agentstore.db
+      - DB_PATH=/app/data/agent-store.db
     volumes:
-      - agentstore-data:/app/data
+      - agent-store-data:/app/data
     ipc: host
 
 volumes:
-  agentstore-data:
+  agent-store-data:

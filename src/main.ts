@@ -66,11 +66,11 @@ if (import.meta.main) {
     Deno.exit(1);
   }
 
-  const dbPath = Deno.env.get("DB_PATH") ?? "./agentstore.db";
+  const dbPath = Deno.env.get("DB_PATH") ?? "./agent-store.db";
   const db = createDatabase(dbPath);
   const handler = createHttpHandler(db, apiKey);
   const port = parseInt(Deno.env.get("PORT") ?? "8000");
 
-  console.log(`AgentStore MCP Bridge running on http://localhost:${port}`);
+  console.log(`Agent Store running on http://localhost:${port}`);
   Deno.serve({ port }, handler);
 }

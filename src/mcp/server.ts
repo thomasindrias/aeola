@@ -5,7 +5,7 @@ import { getProductsByMerchant, searchProducts, getProduct } from "../storage/db
 
 export function createMcpServer(db: Database): McpServer {
   const server = new McpServer({
-    name: "agentstore-mcp-bridge",
+    name: "agent-store",
     version: "1.0.0",
   });
 

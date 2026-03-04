@@ -1,4 +1,4 @@
-# AgentStore MCP Bridge
+# Agent Store
 
 ## Overview
 
