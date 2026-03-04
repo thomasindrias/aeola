@@ -1,4 +1,5 @@
 import { chromium, type Page } from "playwright";
+import { retry } from "../utils/retry.ts";
 
 const PRODUCT_PATH_PATTERNS = [
   /\/product[s]?\//i,
@@ -89,7 +90,7 @@ export async function discoverProductUrls(
       visited.add(url);
 
       try {
-        await page.goto(url, { timeout: 30000, waitUntil: "domcontentloaded" });
+        await retry(() => page.goto(url, { timeout: 30000, waitUntil: "domcontentloaded" }), { maxAttempts: 2, baseDelayMs: 500 });
         consecutiveErrors = 0;
       } catch {
         consecutiveErrors++;

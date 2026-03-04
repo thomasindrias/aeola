@@ -1,3 +1,5 @@
+import { retry } from "../utils/retry.ts";
+
 /**
  * Type for the CLI executor function.
  * Accepts a URL, returns the snapshot text.
@@ -75,7 +77,7 @@ export async function defaultSnapshotExecutor(url: string): Promise<string> {
     stdout: "piped",
     stderr: "piped",
   });
-  const openResult = await openCmd.output();
+  const openResult = await retry(() => openCmd.output());
   if (!openResult.success) {
     const error = new TextDecoder().decode(openResult.stderr);
     throw new Error(`agent-browser open failed: ${error}`);

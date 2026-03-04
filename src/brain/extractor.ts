@@ -1,4 +1,5 @@
 import type OpenAI from "@openai/openai";
+import { retry } from "../utils/retry.ts";
 
 export interface ExtractionResult {
   schema: Record<string, unknown>;
@@ -40,15 +41,17 @@ export async function extractProductData(
     ? `Source URL: ${sourceUrl}\n\nSnapshot:\n${snapshotText}`
     : snapshotText;
 
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMessage },
-    ],
-    temperature: 0,
-    response_format: { type: "json_object" },
-  });
+  const response = await retry(() =>
+    client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userMessage },
+      ],
+      temperature: 0,
+      response_format: { type: "json_object" },
+    })
+  );
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
