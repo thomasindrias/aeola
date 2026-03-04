@@ -14,7 +14,6 @@ export function buildIngestOptions(url: string, name: string): IngestOptions {
     processWithLLM: (client, snapshotText, sourceUrl) =>
       extractProductData(client as OpenAI, snapshotText, sourceUrl),
     openaiClient: client,
-    // Single concurrency: discovery already uses Playwright, avoid parallel browser sessions
-    concurrency: 1,
+    concurrency: Math.min(parseInt(Deno.env.get("CONCURRENCY") ?? "3"), 20),
   };
 }
