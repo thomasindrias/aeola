@@ -6,6 +6,10 @@ export function getOpenApiSpec() {
       version: "1.0.0",
       description:
         "AEO infrastructure — makes e-commerce product data discoverable and consumable by AI agents via REST and MCP.",
+      license: {
+        name: "AGPL-3.0",
+        url: "https://www.gnu.org/licenses/agpl-3.0.html",
+      },
     },
     servers: [{ url: "http://localhost:8000" }],
     security: [{ BearerAuth: [] }],
