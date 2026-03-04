@@ -1,5 +1,5 @@
 import type { Database } from "@db/sqlite";
-import { addMerchant, addProduct } from "../storage/db.ts";
+import { getOrCreateMerchant, addProduct } from "../storage/db.ts";
 import type { Logger } from "../utils/logger.ts";
 
 export interface IngestOptions {
@@ -51,7 +51,7 @@ export async function ingestMerchant(
 ): Promise<IngestResult> {
   const { url, name, discover, extractSnapshot, processWithLLM, openaiClient, concurrency = 5, logger: log } = options;
 
-  const merchantId = addMerchant(db, { url, name });
+  const merchantId = getOrCreateMerchant(db, { url, name });
 
   // Phase 1: Discover product URLs
   const productUrls = await discover(url);

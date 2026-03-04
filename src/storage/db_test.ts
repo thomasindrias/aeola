@@ -4,6 +4,8 @@ import {
   createDatabase,
   addMerchant,
   getMerchant,
+  getOrCreateMerchant,
+  listMerchants,
   addProduct,
   getProduct,
   getProductsByMerchant,
@@ -110,6 +112,37 @@ describe("Storage Layer", () => {
       db = createDatabase(":memory:");
       const results = searchProducts(db, "nonexistent");
       assertEquals(results.length, 0);
+    });
+
+    it("should upsert product on duplicate source_url for same merchant", () => {
+      db = createDatabase(":memory:");
+      const merchantId = addMerchant(db, { url: "https://example.com", name: "Test" });
+
+      addProduct(db, { merchantId, sourceUrl: "https://example.com/p/1", data: { name: "V1" }, schema: {} });
+      addProduct(db, { merchantId, sourceUrl: "https://example.com/p/1", data: { name: "V2" }, schema: {} });
+
+      const products = getProductsByMerchant(db, merchantId);
+      assertEquals(products.length, 1);
+      assertEquals(products[0].data.name, "V2");
+    });
+  });
+
+  describe("getOrCreateMerchant", () => {
+    it("should return existing merchant on duplicate URL", () => {
+      db = createDatabase(":memory:");
+      const id1 = getOrCreateMerchant(db, { url: "https://example.com", name: "Test" });
+      const id2 = getOrCreateMerchant(db, { url: "https://example.com", name: "Test Updated" });
+      assertEquals(id1, id2);
+    });
+  });
+
+  describe("listMerchants", () => {
+    it("should list all merchants", () => {
+      db = createDatabase(":memory:");
+      addMerchant(db, { url: "https://shop1.com", name: "Shop 1" });
+      addMerchant(db, { url: "https://shop2.com", name: "Shop 2" });
+      const merchants = listMerchants(db);
+      assertEquals(merchants.length, 2);
     });
   });
 });

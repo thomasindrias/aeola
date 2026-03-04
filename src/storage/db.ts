@@ -49,9 +49,13 @@ export function createDatabase(path: string): Database {
       source_url TEXT NOT NULL,
       data TEXT NOT NULL,
       schema_def TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(merchant_id, source_url)
     )
   `);
+
+  db.exec("CREATE INDEX IF NOT EXISTS idx_products_merchant_id ON products(merchant_id)");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_products_source_url ON products(source_url)");
 
   return db;
 }
@@ -59,6 +63,16 @@ export function createDatabase(path: string): Database {
 export function addMerchant(db: Database, input: MerchantInput): number {
   db.prepare("INSERT INTO merchants (url, name) VALUES (?, ?)").run(input.url, input.name);
   return db.prepare("SELECT last_insert_rowid() as id").value<[number]>()![0];
+}
+
+export function getOrCreateMerchant(db: Database, input: MerchantInput): number {
+  const existing = db.prepare("SELECT id FROM merchants WHERE url = ?").get<{ id: number }>(input.url);
+  if (existing) return existing.id;
+  return addMerchant(db, input);
+}
+
+export function listMerchants(db: Database): Merchant[] {
+  return db.prepare("SELECT id, url, name, created_at as createdAt FROM merchants").all<Merchant>();
 }
 
 export function getMerchant(db: Database, id: number): Merchant | undefined {
@@ -69,7 +83,10 @@ export function getMerchant(db: Database, id: number): Merchant | undefined {
 
 export function addProduct(db: Database, input: ProductInput): number {
   db.prepare(
-    "INSERT INTO products (merchant_id, source_url, data, schema_def) VALUES (?, ?, ?, ?)"
+    `INSERT INTO products (merchant_id, source_url, data, schema_def) VALUES (?, ?, ?, ?)
+     ON CONFLICT(merchant_id, source_url) DO UPDATE SET
+       data = excluded.data,
+       schema_def = excluded.schema_def`
   ).run(input.merchantId, input.sourceUrl, JSON.stringify(input.data), JSON.stringify(input.schema));
   return db.prepare("SELECT last_insert_rowid() as id").value<[number]>()![0];
 }
