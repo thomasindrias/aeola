@@ -1,8 +1,10 @@
 # Agent Store
 
-Zero-touch translation layer that crawls e-commerce websites, extracts product data using AI, and serves it to buyer agents via [MCP](https://modelcontextprotocol.io/).
+**Agent Engine Optimization (AEO) infrastructure** — makes e-commerce product data discoverable and consumable by AI agents via [MCP](https://modelcontextprotocol.io/).
 
-Give it a merchant URL — it discovers product pages, extracts compact accessibility tree snapshots, dynamically infers schemas with OpenAI, and stores structured JSON. AI buying agents query the data through MCP tools.
+Where SEO optimized websites for search engine crawlers, AEO optimizes data for agentic systems — LLMs, shopping agents, and autonomous commerce protocols that need structured, machine-readable product information to recommend, compare, and transact on behalf of users. In the emerging agent economy, if your products aren't in a format agents can consume, you're invisible.
+
+Give it a merchant URL — it discovers product pages, extracts compact accessibility tree snapshots, dynamically infers schemas with OpenAI, and stores structured JSON. AI agents query and ingest data through MCP tools or the REST API.
 
 ## Architecture
 
@@ -12,14 +14,14 @@ Give it a merchant URL — it discovers product pages, extracts compact accessib
       ▼
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
 │  Discovery   │     │  Extraction   │     │    Brain     │
-│  (Crawlee)   │────▶│ (Agent Browser│────▶│  (OpenAI)    │
-│  URL queuing,│     │  ~200 tokens  │     │  Dynamic     │
-│  retries     │     │  per page)    │     │  schemas     │
+│ (Playwright) │────▶│ (Agent Browser│────▶│  (OpenAI)    │
+│  Priority    │     │  ~200 tokens  │     │  Dynamic     │
+│  queue, dedup│     │  per page)    │     │  schemas     │
 └─────────────┘     └──────────────┘     └──────┬──────┘
                                                  │
                     ┌──────────────┐     ┌───────▼──────┐
                     │   Delivery    │     │   Storage     │
-                    │ (MCP Server)  │◀────│  (SQLite)     │
+                    │ (MCP + REST)  │◀────│  (SQLite)     │
                     │  Streamable   │     │  JSON data    │
                     │  HTTP         │     │               │
                     └──────┬───────┘     └──────────────┘
@@ -55,13 +57,33 @@ docker compose up --build
 
 The server starts on `http://localhost:8000`.
 
-## MCP Tools
+## API
+
+### REST Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/health` | GET | No | Health check for load balancers / k8s probes |
+| `/ingest` | POST | Yes | Trigger merchant crawl and extraction |
+| `/mcp` | POST | Yes | MCP protocol endpoint (streamable HTTP) |
+
+### Ingest a Merchant (REST)
+
+```bash
+curl -X POST http://localhost:8000/ingest \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://shop.example.com", "name": "Example Shop"}'
+```
+
+### MCP Tools
 
 | Tool | Description | Input |
 |------|-------------|-------|
 | `list_products` | List all products for a merchant | `merchantId: number` |
 | `search_products` | Search products by keyword | `query: string` |
 | `get_product` | Get a single product by ID | `productId: number` |
+| `ingest_merchant` | Crawl and extract all product data (long-running) | `url: string, name: string` |
 
 ### Example: Connect an MCP Client
 
@@ -111,7 +133,7 @@ deno lint
 
 ```
 src/
-├── main.ts                # HTTP server, auth, MCP transport
+├── main.ts                # HTTP server (/health, /ingest, /mcp)
 ├── main_test.ts
 ├── brain/
 │   ├── extractor.ts       # OpenAI dynamic schema extraction
@@ -124,9 +146,11 @@ src/
 │   └── server_test.ts
 ├── pipeline/
 │   ├── ingest.ts          # Orchestration pipeline (concurrent)
-│   └── ingest_test.ts
+│   ├── ingest_test.ts
+│   ├── wire.ts            # Dependency wiring for real ingest options
+│   └── wire_test.ts
 ├── spider/
-│   ├── discovery.ts       # Crawlee URL discovery
+│   ├── discovery.ts       # Playwright-based URL discovery
 │   └── discovery_test.ts
 └── storage/
     ├── db.ts              # SQLite database layer
@@ -136,7 +160,7 @@ src/
 ## Tech Stack
 
 - **Runtime:** Deno 2.x, TypeScript
-- **Crawling:** [Crawlee](https://crawlee.dev/) — PlaywrightCrawler, URL queuing, retries, dedup
+- **Crawling:** [Playwright](https://playwright.dev/) — Direct browser crawling, priority queue, dedup
 - **Extraction:** [Agent Browser](https://www.npmjs.com/package/agent-browser) — Compact accessibility tree snapshots (~200-400 tokens/page)
 - **AI:** OpenAI (`gpt-4o-mini`) — Dynamic schema inference, no hardcoded schemas
 - **Database:** SQLite — WAL mode, JSON storage, parameterized queries
@@ -154,4 +178,4 @@ src/
 
 ## License
 
-Private
+[MIT](LICENSE)
