@@ -11,6 +11,7 @@ export interface IngestOptions {
     snapshotText: string,
   ) => Promise<{ schema: Record<string, unknown>; data: Record<string, unknown> }>;
   openaiClient?: unknown;
+  concurrency?: number;
 }
 
 export interface IngestResult {
@@ -20,11 +21,32 @@ export interface IngestResult {
   errors: string[];
 }
 
+async function processWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const i = index++;
+      await fn(items[i]);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+}
+
 export async function ingestMerchant(
   db: Database,
   options: IngestOptions,
 ): Promise<IngestResult> {
-  const { url, name, discover, extractSnapshot, processWithLLM, openaiClient } = options;
+  const { url, name, discover, extractSnapshot, processWithLLM, openaiClient, concurrency = 5 } = options;
 
   const merchantId = addMerchant(db, { url, name });
 
@@ -34,8 +56,8 @@ export async function ingestMerchant(
   let productsIngested = 0;
   const errors: string[] = [];
 
-  // Phase 2 & 3: Extract snapshot + Process with LLM for each URL
-  for (const productUrl of productUrls) {
+  // Phase 2 & 3: Extract snapshot + Process with LLM with bounded concurrency
+  await processWithConcurrency(productUrls, concurrency, async (productUrl) => {
     try {
       const snapshotText = await extractSnapshot(productUrl);
       const { schema, data } = await processWithLLM(openaiClient, snapshotText);
@@ -44,7 +66,7 @@ export async function ingestMerchant(
     } catch (e) {
       errors.push(`Failed ${productUrl}: ${(e as Error).message}`);
     }
-  }
+  });
 
   return { merchantId, productsIngested, urlsDiscovered: productUrls.length, errors };
 }

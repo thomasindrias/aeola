@@ -74,4 +74,38 @@ describe("Ingestion Pipeline", () => {
     assertEquals(result.productsIngested, 0);
     assertEquals(result.errors.length, 0);
   });
+
+  it("should process products concurrently", async () => {
+    db = createDatabase(":memory:");
+    let maxConcurrent = 0;
+    let currentConcurrent = 0;
+
+    const urls = Array.from({ length: 10 }, (_, i) => `https://shop.example.com/product/${i}`);
+
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Concurrent Shop",
+      discover: () => Promise.resolve(urls),
+      extractSnapshot: async (_url) => {
+        currentConcurrent++;
+        if (currentConcurrent > maxConcurrent) maxConcurrent = currentConcurrent;
+        // Simulate async work
+        await new Promise((r) => setTimeout(r, 10));
+        currentConcurrent--;
+        return `@e1 [heading] "Product" [level=1]`;
+      },
+      processWithLLM: () => Promise.resolve({
+        schema: { type: "product" },
+        data: { name: "Widget", price: 5 },
+      }),
+      concurrency: 3,
+    });
+
+    assertEquals(result.productsIngested, 10);
+    assertEquals(result.errors.length, 0);
+    // With concurrency=3 and 10 items, max concurrent should be <= 3
+    assertEquals(maxConcurrent <= 3, true);
+    // Should have actually run concurrently (max > 1)
+    assertEquals(maxConcurrent > 1, true);
+  });
 });
