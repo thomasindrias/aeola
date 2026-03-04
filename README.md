@@ -78,12 +78,20 @@ The server starts on `http://localhost:8000`.
 
 ## API
 
+Full API documentation available at `GET /openapi.json` (unauthenticated).
+
 ### REST Endpoints
 
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
 | `/health` | GET | No | Health check for load balancers / k8s probes |
-| `/ingest` | POST | Yes | Trigger merchant crawl and extraction |
+| `/openapi.json` | GET | No | OpenAPI 3.1 specification |
+| `/ingest` | POST | Yes | Trigger merchant crawl and extraction (rate limited) |
+| `/api/merchants` | GET | Yes | List all merchants |
+| `/api/merchants/:id` | GET | Yes | Get merchant by ID |
+| `/api/merchants/:id/products` | GET | Yes | List products by merchant (paginated) |
+| `/api/products/search?q=keyword` | GET | Yes | Search products by keyword (paginated) |
+| `/api/products/:id` | GET | Yes | Get product by ID |
 | `/mcp` | POST | Yes | MCP protocol endpoint (streamable HTTP) |
 
 ### Ingest a Merchant (REST)
@@ -152,28 +160,42 @@ deno lint
 
 ```
 src/
-├── main.ts                # HTTP server (/health, /ingest, /mcp)
+├── main.ts                # HTTP server (/health, /ingest, /mcp, /api/*)
 ├── main_test.ts
+├── api/
+│   ├── openapi.ts         # OpenAPI 3.1 spec
+│   ├── routes.ts          # REST API handler (merchants, products, search)
+│   └── routes_test.ts
 ├── brain/
-│   ├── extractor.ts       # OpenAI dynamic schema extraction
+│   ├── extractor.ts       # OpenAI dynamic schema extraction (with retry)
 │   └── extractor_test.ts
 ├── extractor/
-│   ├── snapshot.ts        # Agent Browser CLI wrapper
+│   ├── snapshot.ts        # Agent Browser CLI wrapper (with retry)
 │   └── snapshot_test.ts
 ├── mcp/
 │   ├── server.ts          # MCP server with Zod tool schemas
 │   └── server_test.ts
+├── middleware/
+│   ├── cors.ts            # CORS headers and preflight
+│   ├── cors_test.ts
+│   ├── ratelimit.ts       # Sliding window rate limiter
+│   └── ratelimit_test.ts
 ├── pipeline/
-│   ├── ingest.ts          # Orchestration pipeline (concurrent)
+│   ├── ingest.ts          # Orchestration pipeline (concurrent, with logging)
 │   ├── ingest_test.ts
 │   ├── wire.ts            # Dependency wiring for real ingest options
 │   └── wire_test.ts
 ├── spider/
-│   ├── discovery.ts       # Playwright-based URL discovery
+│   ├── discovery.ts       # Playwright-based URL discovery (with retry)
 │   └── discovery_test.ts
-└── storage/
-    ├── db.ts              # SQLite database layer
-    └── db_test.ts
+├── storage/
+│   ├── db.ts              # SQLite database layer (upsert, indices)
+│   └── db_test.ts
+└── utils/
+    ├── logger.ts          # Structured JSON logger
+    ├── logger_test.ts
+    ├── retry.ts           # Exponential backoff retry
+    └── retry_test.ts
 ```
 
 ## Tech Stack
@@ -190,10 +212,14 @@ src/
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `API_KEY` | Yes | — | Bearer token for authenticating MCP requests |
+| `API_KEY` | Yes | — | Bearer token for authenticating requests |
 | `OPENAI_API_KEY` | Yes | — | OpenAI API key for product data extraction |
 | `DB_PATH` | No | `./agent-store.db` | SQLite database file path |
 | `PORT` | No | `8000` | HTTP server port |
+| `CONCURRENCY` | No | `3` | Max concurrent extraction workers (max 20) |
+| `RATE_LIMIT` | No | `5` | Max `/ingest` requests per minute per key |
+| `CORS_ORIGINS` | No | `*` | Allowed CORS origin(s) |
+| `LOG_LEVEL` | No | `info` | Minimum log level (debug, info, warn, error) |
 
 ## License
 

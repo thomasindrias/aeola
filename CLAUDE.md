@@ -44,31 +44,62 @@ Five-component AI-first pipeline:
 - `@db/sqlite` auto-parses JSON from SQLite JSON functions
 - URL scheme validation (http/https only) on all ingestion paths to prevent SSRF
 - Playwright version must stay in sync between `deno.json` and `Dockerfile`
+- Structured JSON logging via `src/utils/logger.ts` — injectable, level-filtered
+- Exponential backoff retry on all external calls (OpenAI, agent-browser, Playwright)
+- Product upsert on `(merchant_id, source_url)` — re-ingesting updates, not duplicates
+- Rate limiting on `/ingest` only — sliding window per API key
+- CORS headers on all responses, configurable via `CORS_ORIGINS` env var
 
 ## Project Structure
 
 ```
 src/
-├── main.ts              # HTTP server entry point (/health, /ingest, /mcp)
+├── main.ts              # HTTP server entry point (/health, /ingest, /mcp, /api/*, /openapi.json)
 ├── main_test.ts
-├── brain/extractor.ts   # OpenAI dynamic schema extraction
-├── extractor/snapshot.ts # Agent Browser CLI wrapper
+├── api/
+│   ├── openapi.ts       # OpenAPI 3.1 spec
+│   ├── routes.ts        # REST API handler (merchants, products, search)
+│   └── routes_test.ts
+├── brain/extractor.ts   # OpenAI dynamic schema extraction (with retry)
+├── extractor/snapshot.ts # Agent Browser CLI wrapper (with retry)
 ├── mcp/server.ts        # MCP server with Zod tools (list, search, get, ingest)
+├── middleware/
+│   ├── cors.ts          # CORS headers and preflight
+│   └── ratelimit.ts     # Sliding window rate limiter for /ingest
 ├── pipeline/ingest.ts   # Orchestration pipeline (discover → extract → LLM → store)
 ├── pipeline/wire.ts     # Dependency wiring for real ingest options
-├── spider/discovery.ts  # Playwright-based URL discovery with priority queue
-└── storage/db.ts        # SQLite database layer
+├── spider/discovery.ts  # Playwright-based URL discovery with priority queue (with retry)
+├── storage/db.ts        # SQLite database layer (upsert, indices)
+└── utils/
+    ├── logger.ts        # Structured JSON logger
+    └── retry.ts         # Exponential backoff retry
 ```
 
 ## Running
 
 ```bash
-# Development
+# Development (all env vars optional except API_KEY and OPENAI_API_KEY)
 API_KEY=xxx OPENAI_API_KEY=xxx deno run --allow-all src/main.ts
 
 # Tests
 deno test --allow-all
 
+# Lint + format check
+deno fmt --check && deno lint
+
 # Docker
 docker compose up --build
 ```
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `API_KEY` | Yes | — | Bearer token for authenticating requests |
+| `OPENAI_API_KEY` | Yes | — | OpenAI API key for product data extraction |
+| `DB_PATH` | No | `./agent-store.db` | SQLite database file path |
+| `PORT` | No | `8000` | HTTP server port |
+| `CONCURRENCY` | No | `3` | Max concurrent extraction workers (max 20) |
+| `RATE_LIMIT` | No | `5` | Max `/ingest` requests per minute per key |
+| `CORS_ORIGINS` | No | `*` | Allowed CORS origin(s) |
+| `LOG_LEVEL` | No | `info` | Minimum log level (debug, info, warn, error) |
