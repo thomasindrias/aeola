@@ -6,6 +6,7 @@ import { timingSafeEqual } from "@std/crypto/timing-safe-equal";
 import { buildIngestOptions } from "./pipeline/wire.ts";
 import { ingestMerchant, type IngestResult } from "./pipeline/ingest.ts";
 import { createLogger, type Logger } from "./utils/logger.ts";
+import { createRateLimiter } from "./middleware/ratelimit.ts";
 
 function constantTimeAuthCheck(authHeader: string | null, apiKey: string): boolean {
   const expected = new TextEncoder().encode(`Bearer ${apiKey}`);
@@ -36,10 +37,14 @@ function defaultIngest(db: Database, url: string, name: string): Promise<IngestR
 export function createHttpHandler(
   db: Database,
   apiKey: string,
-  options?: { ingestFn?: IngestFn; logger?: Logger },
+  options?: { ingestFn?: IngestFn; logger?: Logger; rateLimitMax?: number },
 ) {
   const ingestFn = options?.ingestFn ?? defaultIngest;
   const log = options?.logger ?? createLogger();
+  const rateLimiter = createRateLimiter({
+    maxRequests: options?.rateLimitMax ?? 5,
+    windowMs: 60_000,
+  });
   return async (request: Request): Promise<Response> => {
     const start = Date.now();
     const url = new URL(request.url);
@@ -72,6 +77,18 @@ export function createHttpHandler(
     }
 
     if (url.pathname === "/ingest" && request.method === "POST") {
+      const rateKey = authHeader ?? "anonymous";
+      const rateResult = rateLimiter.check(rateKey);
+      if (!rateResult.allowed) {
+        const retryAfter = Math.ceil((rateResult.retryAfterMs ?? 60_000) / 1000);
+        return respond(new Response(JSON.stringify({ error: "Too Many Requests" }), {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(retryAfter),
+          },
+        }));
+      }
       let body: { url?: string; name?: string };
       try {
         body = await request.json();
@@ -140,7 +157,8 @@ if (import.meta.main) {
 
   const dbPath = Deno.env.get("DB_PATH") ?? "./agent-store.db";
   const db = createDatabase(dbPath);
-  const handler = createHttpHandler(db, apiKey, { logger: log });
+  const rateLimitMax = parseInt(Deno.env.get("RATE_LIMIT") ?? "5");
+  const handler = createHttpHandler(db, apiKey, { logger: log, rateLimitMax });
   const port = parseInt(Deno.env.get("PORT") ?? "8000");
 
   log.info("server started", { port, dbPath });

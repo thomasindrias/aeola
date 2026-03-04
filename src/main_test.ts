@@ -126,6 +126,24 @@ describe("HTTP Server", () => {
     assertEquals(body.urlsDiscovered, 10);
   });
 
+  it("should return 429 when rate limited on /ingest", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key", {
+      ingestFn: () =>
+        Promise.resolve({ merchantId: 1, productsIngested: 0, urlsDiscovered: 0, errors: [] }),
+      rateLimitMax: 1,
+    });
+    const makeReq = () =>
+      new Request("http://localhost/ingest", {
+        method: "POST",
+        headers: { "Authorization": "Bearer test-api-key", "Content-Type": "application/json" },
+        body: JSON.stringify({ url: "https://example.com", name: "Test" }),
+      });
+    await handler(makeReq()); // first — allowed
+    const response = await handler(makeReq()); // second — blocked
+    assertEquals(response.status, 429);
+  });
+
   it("should return 404 for unknown paths", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key");
