@@ -6,6 +6,7 @@ services:
     environment:
       - API_KEY=${API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_PATH=/app/data/agentstore.db
     volumes:
       - agentstore-data:/app/data
     ipc: host

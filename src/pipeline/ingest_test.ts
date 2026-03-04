@@ -16,12 +16,12 @@ describe("Ingestion Pipeline", () => {
     const result = await ingestMerchant(db, {
       url: "https://shop.example.com",
       name: "Example Shop",
-      discover: async () => [
+      discover: () => Promise.resolve([
         "https://shop.example.com/product/1",
         "https://shop.example.com/product/2",
-      ],
-      extractSnapshot: async (url) => `@e1 [heading] "Product from ${url}" [level=1]\n@e2 [text] "Price: $29.99"`,
-      processWithLLM: async (_client, _text) => ({
+      ]),
+      extractSnapshot: (url) => Promise.resolve(`@e1 [heading] "Product from ${url}" [level=1]\n@e2 [text] "Price: $29.99"`),
+      processWithLLM: () => Promise.resolve({
         schema: { type: "product", properties: { name: "string", price: "number" } },
         data: { name: "Blue T-Shirt", price: 29.99 },
       }),
@@ -40,16 +40,16 @@ describe("Ingestion Pipeline", () => {
     const result = await ingestMerchant(db, {
       url: "https://shop.example.com",
       name: "Example Shop",
-      discover: async () => [
+      discover: () => Promise.resolve([
         "https://shop.example.com/product/1",
         "https://shop.example.com/product/2",
-      ],
-      extractSnapshot: async (url) => {
+      ]),
+      extractSnapshot: (_url) => {
         callCount++;
-        if (callCount === 1) throw new Error("Snapshot failed");
-        return `@e1 [heading] "Widget" [level=1]`;
+        if (callCount === 1) return Promise.reject(new Error("Snapshot failed"));
+        return Promise.resolve(`@e1 [heading] "Widget" [level=1]`);
       },
-      processWithLLM: async () => ({
+      processWithLLM: () => Promise.resolve({
         schema: { type: "product" },
         data: { name: "Widget", price: 10 },
       }),
@@ -66,9 +66,9 @@ describe("Ingestion Pipeline", () => {
     const result = await ingestMerchant(db, {
       url: "https://empty.example.com",
       name: "Empty Shop",
-      discover: async () => [],
-      extractSnapshot: async () => "",
-      processWithLLM: async () => ({ schema: {}, data: {} }),
+      discover: () => Promise.resolve([]),
+      extractSnapshot: () => Promise.resolve(""),
+      processWithLLM: () => Promise.resolve({ schema: {}, data: {} }),
     });
 
     assertEquals(result.productsIngested, 0);

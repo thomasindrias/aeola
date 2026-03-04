@@ -92,16 +92,19 @@ export function getProduct(db: Database, id: number): Product | undefined {
   return row ? deserializeProduct(row) : undefined;
 }
 
-export function getProductsByMerchant(db: Database, merchantId: number): Product[] {
+export function getProductsByMerchant(db: Database, merchantId: number, limit = 100, offset = 0): Product[] {
   const rows = db.prepare(
-    "SELECT id, merchant_id as merchantId, source_url as sourceUrl, data, schema_def, created_at as createdAt FROM products WHERE merchant_id = ?"
-  ).all<Record<string, unknown>>(merchantId);
+    "SELECT id, merchant_id as merchantId, source_url as sourceUrl, data, schema_def, created_at as createdAt FROM products WHERE merchant_id = ? LIMIT ? OFFSET ?"
+  ).all<Record<string, unknown>>(merchantId, limit, offset);
   return rows.map(deserializeProduct);
 }
 
-export function searchProducts(db: Database, query: string): Product[] {
+export function searchProducts(db: Database, query: string, limit = 100, offset = 0): Product[] {
+  if (query.length > 500) {
+    throw new Error("Search query too long (max 500 characters)");
+  }
   const rows = db.prepare(
-    "SELECT id, merchant_id as merchantId, source_url as sourceUrl, data, schema_def, created_at as createdAt FROM products WHERE data LIKE ?"
-  ).all<Record<string, unknown>>(`%${query}%`);
+    "SELECT id, merchant_id as merchantId, source_url as sourceUrl, data, schema_def, created_at as createdAt FROM products WHERE data LIKE ? LIMIT ? OFFSET ?"
+  ).all<Record<string, unknown>>(`%${query}%`, limit, offset);
   return rows.map(deserializeProduct);
 }

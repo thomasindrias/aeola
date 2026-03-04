@@ -29,17 +29,31 @@ describe("HTTP Server", () => {
     assertEquals(response.status, 401);
   });
 
-  it("should return 200 for health check with valid API key", async () => {
+  it("should return 200 for health check without auth", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key");
     const response = await handler(
-      new Request("http://localhost/health", {
-        headers: { "Authorization": "Bearer test-api-key" },
-      }),
+      new Request("http://localhost/health"),
     );
     assertEquals(response.status, 200);
     const body = await response.json();
     assertEquals(body.status, "ok");
+  });
+
+  it("should return 400 for malformed JSON on /mcp", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/mcp", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer test-api-key",
+          "Content-Type": "application/json",
+        },
+        body: "not json",
+      }),
+    );
+    assertEquals(response.status, 400);
   });
 
   it("should return 404 for unknown paths", async () => {

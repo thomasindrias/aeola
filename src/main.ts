@@ -2,21 +2,22 @@ import { createDatabase } from "./storage/db.ts";
 import { createMcpServer } from "./mcp/server.ts";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { Database } from "@db/sqlite";
+import { timingSafeEqual } from "@std/crypto/timing-safe-equal";
+
+function constantTimeAuthCheck(authHeader: string | null, apiKey: string): boolean {
+  const expected = new TextEncoder().encode(`Bearer ${apiKey}`);
+  const actual = new TextEncoder().encode(authHeader ?? "");
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}
 
 export function createHttpHandler(db: Database, apiKey: string) {
   const server = createMcpServer(db);
 
   return async (request: Request): Promise<Response> => {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
     const url = new URL(request.url);
 
+    // Health check is unauthenticated (for load balancers / k8s probes)
     if (url.pathname === "/health") {
       return new Response(JSON.stringify({ status: "ok" }), {
         status: 200,
@@ -24,12 +25,29 @@ export function createHttpHandler(db: Database, apiKey: string) {
       });
     }
 
+    // Auth check for all other endpoints
+    const authHeader = request.headers.get("Authorization");
+    if (!constantTimeAuthCheck(authHeader, apiKey)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     if (url.pathname === "/mcp") {
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
       await server.connect(transport);
-      const body = await request.json();
       return await transport.handleRequest(request, { parsedBody: body });
     }
 

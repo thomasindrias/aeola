@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/playwright:v1.48.0-noble
 
 # Install Deno
-RUN curl -fsSL https://deno.land/install.sh | sh
+RUN curl -fsSL https://deno.land/install.sh | sh -s -- v2.1.4
 ENV DENO_INSTALL="/root/.deno"
 ENV PATH="${DENO_INSTALL}/bin:${PATH}"
 

@@ -18,9 +18,15 @@ export function parseSnapshotText(rawOutput: string): string {
  * Opens the URL, takes a compact interactive snapshot, closes the session.
  */
 export async function defaultSnapshotExecutor(url: string): Promise<string> {
+  // Validate URL before passing to CLI
+  const parsed = new URL(url);
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error(`Unsupported protocol: ${parsed.protocol}`);
+  }
+
   // Open URL in agent-browser
   const openCmd = new Deno.Command("agent-browser", {
-    args: ["open", url],
+    args: ["open", parsed.href],
     stdout: "piped",
     stderr: "piped",
   });

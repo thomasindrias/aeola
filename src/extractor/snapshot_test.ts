@@ -30,8 +30,8 @@ describe("Extractor - Agent Browser Snapshots", () => {
 
   describe("getPageSnapshot", () => {
     it("should call agent-browser CLI and return snapshot text", async () => {
-      const mockExecutor = async (_url: string): Promise<string> => {
-        return SAMPLE_SNAPSHOT;
+      const mockExecutor = (_url: string): Promise<string> => {
+        return Promise.resolve(SAMPLE_SNAPSHOT);
       };
 
       const result = await getPageSnapshot("https://example.com/product/1", mockExecutor);
@@ -40,8 +40,8 @@ describe("Extractor - Agent Browser Snapshots", () => {
     });
 
     it("should throw on CLI failure", async () => {
-      const mockExecutor = async (_url: string): Promise<string> => {
-        throw new Error("agent-browser: command not found");
+      const mockExecutor = (_url: string): Promise<string> => {
+        return Promise.reject(new Error("agent-browser: command not found"));
       };
 
       await assertRejects(

@@ -1,18 +1,19 @@
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
+import type OpenAI from "@openai/openai";
 import { extractProductData } from "./extractor.ts";
 
 // Minimal mock matching the OpenAI client contract
-function createMockOpenAI(mockResponse: string) {
+function createMockOpenAI(mockResponse: string | null): OpenAI {
   return {
     chat: {
       completions: {
-        create: async () => ({
+        create: () => Promise.resolve({
           choices: [{ message: { content: mockResponse } }],
         }),
       },
     },
-  };
+  } as unknown as OpenAI;
 }
 
 // Compact accessibility tree snapshot (from agent-browser)
@@ -51,7 +52,7 @@ const VALID_EXTRACTION = JSON.stringify({
 describe("Brain - Dynamic Extractor", () => {
   it("should return parsed schema and data from valid LLM response", async () => {
     const mockClient = createMockOpenAI(VALID_EXTRACTION);
-    const result = await extractProductData(mockClient as any, SAMPLE_SNAPSHOT);
+    const result = await extractProductData(mockClient, SAMPLE_SNAPSHOT);
 
     assertExists(result.schema);
     assertExists(result.data);
@@ -63,7 +64,7 @@ describe("Brain - Dynamic Extractor", () => {
   it("should throw on malformed JSON from LLM", async () => {
     const mockClient = createMockOpenAI("not valid json at all");
     await assertRejects(
-      () => extractProductData(mockClient as any, SAMPLE_SNAPSHOT),
+      () => extractProductData(mockClient, SAMPLE_SNAPSHOT),
       Error,
       "Failed to parse",
     );
@@ -72,18 +73,16 @@ describe("Brain - Dynamic Extractor", () => {
   it("should throw when LLM returns JSON without required fields", async () => {
     const mockClient = createMockOpenAI(JSON.stringify({ foo: "bar" }));
     await assertRejects(
-      () => extractProductData(mockClient as any, SAMPLE_SNAPSHOT),
+      () => extractProductData(mockClient, SAMPLE_SNAPSHOT),
       Error,
       "Failed to parse",
     );
   });
 
   it("should throw on empty LLM response", async () => {
-    const mockClient = {
-      chat: { completions: { create: async () => ({ choices: [{ message: { content: null } }] }) } },
-    };
+    const mockClient = createMockOpenAI(null);
     await assertRejects(
-      () => extractProductData(mockClient as any, SAMPLE_SNAPSHOT),
+      () => extractProductData(mockClient, SAMPLE_SNAPSHOT),
       Error,
       "Failed to parse",
     );

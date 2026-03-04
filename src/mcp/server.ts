@@ -17,7 +17,7 @@ export function createMcpServer(db: Database): McpServer {
         merchantId: z.number().describe("The merchant ID"),
       }),
     },
-    async ({ merchantId }) => {
+    ({ merchantId }) => {
       const products = getProductsByMerchant(db, merchantId);
       return { content: [{ type: "text" as const, text: JSON.stringify(products) }] };
     },
@@ -31,7 +31,7 @@ export function createMcpServer(db: Database): McpServer {
         query: z.string().describe("Search keyword"),
       }),
     },
-    async ({ query }) => {
+    ({ query }) => {
       const products = searchProducts(db, query);
       return { content: [{ type: "text" as const, text: JSON.stringify(products) }] };
     },
@@ -45,7 +45,7 @@ export function createMcpServer(db: Database): McpServer {
         productId: z.number().describe("The product ID"),
       }),
     },
-    async ({ productId }) => {
+    ({ productId }) => {
       const product = getProduct(db, productId);
       if (!product) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Product not found" }) }] };
