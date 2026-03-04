@@ -15,7 +15,7 @@ node_modules/
 .DS_Store
 
 # Crawlee storage
-storage/
+/storage/
 
 # Playwright
 test-results/
