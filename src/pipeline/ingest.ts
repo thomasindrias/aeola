@@ -1,5 +1,6 @@
 import type { Database } from "@db/sqlite";
 import { addMerchant, addProduct } from "../storage/db.ts";
+import type { Logger } from "../utils/logger.ts";
 
 export interface IngestOptions {
   url: string;
@@ -13,6 +14,7 @@ export interface IngestOptions {
   ) => Promise<{ schema: Record<string, unknown>; data: Record<string, unknown> }>;
   openaiClient?: unknown;
   concurrency?: number;
+  logger?: Logger;
 }
 
 export interface IngestResult {
@@ -47,12 +49,13 @@ export async function ingestMerchant(
   db: Database,
   options: IngestOptions,
 ): Promise<IngestResult> {
-  const { url, name, discover, extractSnapshot, processWithLLM, openaiClient, concurrency = 5 } = options;
+  const { url, name, discover, extractSnapshot, processWithLLM, openaiClient, concurrency = 5, logger: log } = options;
 
   const merchantId = addMerchant(db, { url, name });
 
   // Phase 1: Discover product URLs
   const productUrls = await discover(url);
+  log?.info("discovery complete", { url, urlsDiscovered: productUrls.length });
 
   let productsIngested = 0;
   const errors: string[] = [];
@@ -65,9 +68,12 @@ export async function ingestMerchant(
       addProduct(db, { merchantId, sourceUrl: productUrl, data, schema });
       productsIngested++;
     } catch (e) {
-      errors.push(`Failed ${productUrl}: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      errors.push(`Failed ${productUrl}: ${msg}`);
+      log?.warn("extraction failed", { productUrl, error: msg });
     }
   });
 
+  log?.info("ingest complete", { url, productsIngested, errors: errors.length });
   return { merchantId, productsIngested, urlsDiscovered: productUrls.length, errors };
 }
