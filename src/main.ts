@@ -12,8 +12,6 @@ function constantTimeAuthCheck(authHeader: string | null, apiKey: string): boole
 }
 
 export function createHttpHandler(db: Database, apiKey: string) {
-  const server = createMcpServer(db);
-
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
 
@@ -44,6 +42,8 @@ export function createHttpHandler(db: Database, apiKey: string) {
           headers: { "Content-Type": "application/json" },
         });
       }
+      // Create a fresh server + transport per request (stateless mode)
+      const server = createMcpServer(db);
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
