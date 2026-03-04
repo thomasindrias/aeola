@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/playwright:v1.48.0-noble
+# Playwright version must match deno.json "playwright" import (currently 1.52.0)
+FROM mcr.microsoft.com/playwright:v1.52.0-noble
 
 # Install unzip (required by Deno installer) and Deno
 RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/*
@@ -23,4 +24,5 @@ RUN deno cache src/main.ts
 
 EXPOSE 8000
 
-CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "--allow-ffi", "--allow-run", "src/main.ts"]
+# Playwright version must match deno.json "playwright" import (currently 1.52.0)
+CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "--allow-ffi", "--allow-run", "--allow-sys", "src/main.ts"]

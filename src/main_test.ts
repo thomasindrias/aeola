@@ -56,6 +56,76 @@ describe("HTTP Server", () => {
     assertEquals(response.status, 400);
   });
 
+  it("should reject POST /ingest without auth", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(new Request("http://localhost/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com", name: "Test" }),
+    }));
+    assertEquals(response.status, 401);
+  });
+
+  it("should reject POST /ingest with invalid JSON", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(new Request("http://localhost/ingest", {
+      method: "POST",
+      headers: { "Authorization": "Bearer test-api-key", "Content-Type": "application/json" },
+      body: "not-json",
+    }));
+    assertEquals(response.status, 400);
+  });
+
+  it("should reject POST /ingest with missing url or name", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(new Request("http://localhost/ingest", {
+      method: "POST",
+      headers: { "Authorization": "Bearer test-api-key", "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com" }),
+    }));
+    assertEquals(response.status, 400);
+    const body = await response.json();
+    assertEquals(body.error, "url and name are required");
+  });
+
+  it("should reject POST /ingest with non-http URL", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(new Request("http://localhost/ingest", {
+      method: "POST",
+      headers: { "Authorization": "Bearer test-api-key", "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "file:///etc/passwd", name: "Evil" }),
+    }));
+    assertEquals(response.status, 400);
+    const body = await response.json();
+    assertEquals(body.error, "Only http/https URLs are supported");
+  });
+
+  it("should successfully call POST /ingest with injected ingestFn", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key", {
+      ingestFn: () => Promise.resolve({
+        merchantId: 1,
+        productsIngested: 3,
+        urlsDiscovered: 10,
+        errors: [],
+      }),
+    });
+    const response = await handler(new Request("http://localhost/ingest", {
+      method: "POST",
+      headers: { "Authorization": "Bearer test-api-key", "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "https://shop.example.com", name: "Test Shop" }),
+    }));
+    assertEquals(response.status, 200);
+    const body = await response.json();
+    assertEquals(body.merchantId, 1);
+    assertEquals(body.productsIngested, 3);
+    assertEquals(body.urlsDiscovered, 10);
+  });
+
   it("should return 404 for unknown paths", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key");

@@ -5,8 +5,11 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "./server.ts";
 import { createDatabase, addMerchant, addProduct } from "../storage/db.ts";
 
-async function createTestClient(db: ReturnType<typeof createDatabase>) {
-  const server = createMcpServer(db);
+async function createTestClient(
+  db: ReturnType<typeof createDatabase>,
+  options?: Parameters<typeof createMcpServer>[1],
+) {
+  const server = createMcpServer(db, options);
   const client = new Client({ name: "test-client", version: "1.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
@@ -77,6 +80,51 @@ describe("MCP Server", () => {
     const result = await client.callTool({ name: "get_product", arguments: { productId } });
     const product = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
     assertEquals(product.data.name, "Widget");
+    await client.close();
+  });
+
+  it("should list ingest_merchant tool via MCP protocol", async () => {
+    db = createDatabase(":memory:");
+    const client = await createTestClient(db);
+    const { tools } = await client.listTools();
+    const toolNames = tools.map((t) => t.name);
+    assertEquals(toolNames.includes("ingest_merchant"), true);
+    await client.close();
+  });
+
+  it("should call ingest_merchant tool with injected function", async () => {
+    db = createDatabase(":memory:");
+    let calledWith: { url: string; name: string } | null = null;
+    const client = await createTestClient(db, {
+      ingestFn: (_db, url, name) => {
+        calledWith = { url, name };
+        return Promise.resolve({ merchantId: 1, productsIngested: 0, urlsDiscovered: 0, errors: [] });
+      },
+    });
+    const result = await client.callTool({
+      name: "ingest_merchant",
+      arguments: { url: "https://shop.example.com", name: "Test Shop" },
+    });
+    const body = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    assertEquals(calledWith, { url: "https://shop.example.com", name: "Test Shop" });
+    assertEquals(body.merchantId, 1);
+    await client.close();
+  });
+
+  it("should reject non-http URL in ingest_merchant tool", async () => {
+    db = createDatabase(":memory:");
+    const client = await createTestClient(db, {
+      ingestFn: () => {
+        throw new Error("should not be called");
+      },
+    });
+    const result = await client.callTool({
+      name: "ingest_merchant",
+      arguments: { url: "file:///etc/passwd", name: "Evil" },
+    });
+    assertEquals(result.isError, true);
+    const body = JSON.parse((result.content as Array<{ type: string; text: string }>)[0].text);
+    assertEquals(body.error, "Only http/https URLs are supported");
     await client.close();
   });
 

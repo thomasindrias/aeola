@@ -10,7 +10,7 @@
     "@std/testing": "jsr:@std/testing@^1.0.0",
     "@openai/openai": "jsr:@openai/openai@^4.80.0",
     "@db/sqlite": "jsr:@db/sqlite@^0.13",
-    "crawlee": "npm:crawlee@^3.10.0",
+    "playwright": "npm:playwright@1.52.0",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.0.1",
     "zod": "npm:zod@^3.25.0"
   },
