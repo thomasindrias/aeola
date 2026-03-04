@@ -144,6 +144,16 @@ describe("HTTP Server", () => {
     assertEquals(response.status, 429);
   });
 
+  it("should serve OpenAPI spec at /openapi.json", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(new Request("http://localhost/openapi.json"));
+    assertEquals(response.status, 200);
+    const spec = await response.json();
+    assertEquals(spec.openapi, "3.1.0");
+    assertEquals(spec.info.title, "Agent Store API");
+  });
+
   it("should return 204 for OPTIONS preflight with CORS headers", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key");

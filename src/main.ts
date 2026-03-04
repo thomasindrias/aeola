@@ -9,6 +9,7 @@ import { createLogger, type Logger } from "./utils/logger.ts";
 import { createRateLimiter } from "./middleware/ratelimit.ts";
 import { addCorsHeaders, handlePreflight } from "./middleware/cors.ts";
 import { createApiHandler } from "./api/routes.ts";
+import { getOpenApiSpec } from "./api/openapi.ts";
 
 function constantTimeAuthCheck(authHeader: string | null, apiKey: string): boolean {
   const expected = new TextEncoder().encode(`Bearer ${apiKey}`);
@@ -68,7 +69,14 @@ export function createHttpHandler(
       return handlePreflight(corsOrigin);
     }
 
-    // Health check is unauthenticated (for load balancers / k8s probes)
+    // Unauthenticated endpoints
+    if (url.pathname === "/openapi.json") {
+      return respond(new Response(JSON.stringify(getOpenApiSpec()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }));
+    }
+
     if (url.pathname === "/health") {
       return respond(new Response(JSON.stringify({ status: "ok" }), {
         status: 200,
