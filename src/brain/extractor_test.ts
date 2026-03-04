@@ -87,6 +87,57 @@ describe("Brain - Dynamic Extractor", () => {
     );
   });
 
+  describe("URL context", () => {
+    it("should include source URL in user message when provided", async () => {
+      let capturedMessages: Array<{ role: string; content: string }> = [];
+      const mockClient = {
+        chat: {
+          completions: {
+            create: (params: { messages: Array<{ role: string; content: string }> }) => {
+              capturedMessages = params.messages;
+              return Promise.resolve({
+                choices: [{ message: { content: VALID_EXTRACTION } }],
+              });
+            },
+          },
+        },
+      } as unknown as OpenAI;
+
+      await extractProductData(
+        mockClient,
+        SAMPLE_SNAPSHOT,
+        "https://example.com/catalogue/its-only-the-himalayas_54/index.html",
+      );
+
+      const userMsg = capturedMessages.find((m) => m.role === "user")!;
+      assertEquals(userMsg.content.includes("Source URL:"), true);
+      assertEquals(userMsg.content.includes("its-only-the-himalayas"), true);
+      assertEquals(userMsg.content.includes(SAMPLE_SNAPSHOT), true);
+    });
+
+    it("should send only snapshot when no URL provided", async () => {
+      let capturedMessages: Array<{ role: string; content: string }> = [];
+      const mockClient = {
+        chat: {
+          completions: {
+            create: (params: { messages: Array<{ role: string; content: string }> }) => {
+              capturedMessages = params.messages;
+              return Promise.resolve({
+                choices: [{ message: { content: VALID_EXTRACTION } }],
+              });
+            },
+          },
+        },
+      } as unknown as OpenAI;
+
+      await extractProductData(mockClient, SAMPLE_SNAPSHOT);
+
+      const userMsg = capturedMessages.find((m) => m.role === "user")!;
+      assertEquals(userMsg.content.includes("Source URL:"), false);
+      assertEquals(userMsg.content, SAMPLE_SNAPSHOT);
+    });
+  });
+
   it("should pass response_format json_object to OpenAI", async () => {
     let capturedParams: Record<string, unknown> = {};
     const mockClient = {

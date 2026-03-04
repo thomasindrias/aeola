@@ -21,7 +21,7 @@ describe("Ingestion Pipeline", () => {
         "https://shop.example.com/product/2",
       ]),
       extractSnapshot: (url) => Promise.resolve(`@e1 [heading] "Product from ${url}" [level=1]\n@e2 [text] "Price: $29.99"`),
-      processWithLLM: () => Promise.resolve({
+      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({
         schema: { type: "product", properties: { name: "string", price: "number" } },
         data: { name: "Blue T-Shirt", price: 29.99 },
       }),
@@ -49,7 +49,7 @@ describe("Ingestion Pipeline", () => {
         if (callCount === 1) return Promise.reject(new Error("Snapshot failed"));
         return Promise.resolve(`@e1 [heading] "Widget" [level=1]`);
       },
-      processWithLLM: () => Promise.resolve({
+      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({
         schema: { type: "product" },
         data: { name: "Widget", price: 10 },
       }),
@@ -68,11 +68,35 @@ describe("Ingestion Pipeline", () => {
       name: "Empty Shop",
       discover: () => Promise.resolve([]),
       extractSnapshot: () => Promise.resolve(""),
-      processWithLLM: () => Promise.resolve({ schema: {}, data: {} }),
+      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({ schema: {}, data: {} }),
     });
 
     assertEquals(result.productsIngested, 0);
     assertEquals(result.errors.length, 0);
+  });
+
+  it("should pass product URL to processWithLLM", async () => {
+    db = createDatabase(":memory:");
+    const receivedUrls: string[] = [];
+
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "URL Test Shop",
+      discover: () => Promise.resolve([
+        "https://shop.example.com/product/abc",
+      ]),
+      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product" [level=1]\n@e2 [text] "Price: $29.99"`),
+      processWithLLM: (_client, _snapshot, sourceUrl) => {
+        receivedUrls.push(sourceUrl);
+        return Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", price: 5 },
+        });
+      },
+    });
+
+    assertEquals(result.productsIngested, 1);
+    assertEquals(receivedUrls, ["https://shop.example.com/product/abc"]);
   });
 
   it("should process products concurrently", async () => {
@@ -94,7 +118,7 @@ describe("Ingestion Pipeline", () => {
         currentConcurrent--;
         return `@e1 [heading] "Product" [level=1]`;
       },
-      processWithLLM: () => Promise.resolve({
+      processWithLLM: (_client, _snapshot, _sourceUrl) => Promise.resolve({
         schema: { type: "product" },
         data: { name: "Widget", price: 5 },
       }),

@@ -9,6 +9,7 @@ export interface IngestOptions {
   processWithLLM: (
     client: unknown,
     snapshotText: string,
+    sourceUrl: string,
   ) => Promise<{ schema: Record<string, unknown>; data: Record<string, unknown> }>;
   openaiClient?: unknown;
   concurrency?: number;
@@ -60,7 +61,7 @@ export async function ingestMerchant(
   await processWithConcurrency(productUrls, concurrency, async (productUrl) => {
     try {
       const snapshotText = await extractSnapshot(productUrl);
-      const { schema, data } = await processWithLLM(openaiClient, snapshotText);
+      const { schema, data } = await processWithLLM(openaiClient, snapshotText, productUrl);
       addProduct(db, { merchantId, sourceUrl: productUrl, data, schema });
       productsIngested++;
     } catch (e) {

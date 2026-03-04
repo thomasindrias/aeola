@@ -11,8 +11,8 @@ export function buildIngestOptions(url: string, name: string): IngestOptions {
     name,
     discover: discoverProductUrls,
     extractSnapshot: getPageSnapshot,
-    processWithLLM: (client, snapshotText) =>
-      extractProductData(client as OpenAI, snapshotText),
+    processWithLLM: (client, snapshotText, sourceUrl) =>
+      extractProductData(client as OpenAI, snapshotText, sourceUrl),
     openaiClient: client,
     // Single concurrency: discovery already uses Playwright, avoid parallel browser sessions
     concurrency: 1,
