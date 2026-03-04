@@ -144,6 +144,26 @@ describe("HTTP Server", () => {
     assertEquals(response.status, 429);
   });
 
+  it("should return 204 for OPTIONS preflight with CORS headers", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/api/merchants", { method: "OPTIONS" }),
+    );
+    assertEquals(response.status, 204);
+    assertEquals(
+      response.headers.get("Access-Control-Allow-Methods"),
+      "GET, POST, OPTIONS",
+    );
+  });
+
+  it("should include CORS headers on responses", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(new Request("http://localhost/health"));
+    assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
+  });
+
   it("should return 404 for unknown paths", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key");
