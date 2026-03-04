@@ -41,23 +41,17 @@ export async function extractProductData(
       { role: "user", content: snapshotText },
     ],
     temperature: 0,
+    response_format: { type: "json_object" },
   });
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
-    throw new Error("Failed to parse: empty response from LLM");
+    throw new Error("Empty response from LLM");
   }
 
-  try {
-    const parsed = JSON.parse(content) as ExtractionResult;
-    if (!parsed.schema || !parsed.data) {
-      throw new Error("Failed to parse: missing schema or data fields");
-    }
-    return parsed;
-  } catch (e) {
-    if (e instanceof SyntaxError) {
-      throw new Error(`Failed to parse: invalid JSON from LLM — ${e.message}`);
-    }
-    throw e;
+  const parsed = JSON.parse(content) as ExtractionResult;
+  if (!parsed.schema || !parsed.data) {
+    throw new Error("Missing required fields: schema or data");
   }
+  return parsed;
 }

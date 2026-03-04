@@ -65,8 +65,7 @@ describe("Brain - Dynamic Extractor", () => {
     const mockClient = createMockOpenAI("not valid json at all");
     await assertRejects(
       () => extractProductData(mockClient, SAMPLE_SNAPSHOT),
-      Error,
-      "Failed to parse",
+      SyntaxError,
     );
   });
 
@@ -75,7 +74,7 @@ describe("Brain - Dynamic Extractor", () => {
     await assertRejects(
       () => extractProductData(mockClient, SAMPLE_SNAPSHOT),
       Error,
-      "Failed to parse",
+      "Missing required fields",
     );
   });
 
@@ -84,7 +83,29 @@ describe("Brain - Dynamic Extractor", () => {
     await assertRejects(
       () => extractProductData(mockClient, SAMPLE_SNAPSHOT),
       Error,
-      "Failed to parse",
+      "Empty response from LLM",
+    );
+  });
+
+  it("should pass response_format json_object to OpenAI", async () => {
+    let capturedParams: Record<string, unknown> = {};
+    const mockClient = {
+      chat: {
+        completions: {
+          create: (params: Record<string, unknown>) => {
+            capturedParams = params;
+            return Promise.resolve({
+              choices: [{ message: { content: VALID_EXTRACTION } }],
+            });
+          },
+        },
+      },
+    } as unknown as OpenAI;
+
+    await extractProductData(mockClient, SAMPLE_SNAPSHOT);
+    assertEquals(
+      (capturedParams.response_format as { type: string }).type,
+      "json_object",
     );
   });
 });
