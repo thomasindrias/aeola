@@ -3,8 +3,10 @@
 .env.*
 !.env.example
 
-# SQLite databases
+# SQLite databases and runtime files
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 
