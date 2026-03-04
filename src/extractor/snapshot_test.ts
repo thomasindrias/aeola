@@ -31,7 +31,7 @@ describe("Extractor - Agent Browser Snapshots", () => {
   describe("tryScopedSnapshot", () => {
     it("should return snapshot when selector matches content over 50 chars", async () => {
       const longContent = `@e1 [heading] "Product Name Here" [level=1]\n@e2 [text] "Price: $29.99"`;
-      const mockCmd = async (_args: string[]) => ({
+      const mockCmd = (_args: string[]) => Promise.resolve({
         success: true,
         stdout: longContent,
       });
@@ -41,7 +41,7 @@ describe("Extractor - Agent Browser Snapshots", () => {
     });
 
     it("should return null when selector returns content under 50 chars", async () => {
-      const mockCmd = async (_args: string[]) => ({
+      const mockCmd = (_args: string[]) => Promise.resolve({
         success: true,
         stdout: "short output",
       });
@@ -50,7 +50,7 @@ describe("Extractor - Agent Browser Snapshots", () => {
     });
 
     it("should return null when command fails", async () => {
-      const mockCmd = async (_args: string[]) => ({
+      const mockCmd = (_args: string[]) => Promise.resolve({
         success: false,
         stdout: "",
       });
@@ -59,7 +59,7 @@ describe("Extractor - Agent Browser Snapshots", () => {
     });
 
     it("should return null when command throws", async () => {
-      const mockCmd = async (_args: string[]) => {
+      const mockCmd = (_args: string[]): Promise<{ success: boolean; stdout: string }> => {
         throw new Error("command not found");
       };
       const result = await tryScopedSnapshot("main", mockCmd);
@@ -68,9 +68,9 @@ describe("Extractor - Agent Browser Snapshots", () => {
 
     it("should pass correct args including selector", async () => {
       let capturedArgs: string[] = [];
-      const mockCmd = async (args: string[]) => {
+      const mockCmd = (args: string[]) => {
         capturedArgs = args;
-        return { success: true, stdout: "x".repeat(60) };
+        return Promise.resolve({ success: true, stdout: "x".repeat(60) });
       };
       await tryScopedSnapshot("#my-selector", mockCmd);
       assertEquals(capturedArgs.includes("-s"), true);
