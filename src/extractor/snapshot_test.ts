@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
-import { getPageSnapshot, parseSnapshotText } from "./snapshot.ts";
+import { CONTENT_SELECTORS, getPageSnapshot, parseSnapshotText, tryScopedSnapshot } from "./snapshot.ts";
 
 // Sample agent-browser snapshot output (compact accessibility tree format)
 const SAMPLE_SNAPSHOT = `@e1 [heading] "Blue Cotton T-Shirt" [level=1]
@@ -25,6 +25,65 @@ describe("Extractor - Agent Browser Snapshots", () => {
     it("should handle empty snapshot gracefully", () => {
       const result = parseSnapshotText("");
       assertEquals(result, "");
+    });
+  });
+
+  describe("tryScopedSnapshot", () => {
+    it("should return snapshot when selector matches content over 50 chars", async () => {
+      const longContent = `@e1 [heading] "Product Name Here" [level=1]\n@e2 [text] "Price: $29.99"`;
+      const mockCmd = async (_args: string[]) => ({
+        success: true,
+        stdout: longContent,
+      });
+      const result = await tryScopedSnapshot("main", mockCmd);
+      assertExists(result);
+      assertEquals(result!.includes("Product Name"), true);
+    });
+
+    it("should return null when selector returns content under 50 chars", async () => {
+      const mockCmd = async (_args: string[]) => ({
+        success: true,
+        stdout: "short output",
+      });
+      const result = await tryScopedSnapshot("main", mockCmd);
+      assertEquals(result, null);
+    });
+
+    it("should return null when command fails", async () => {
+      const mockCmd = async (_args: string[]) => ({
+        success: false,
+        stdout: "",
+      });
+      const result = await tryScopedSnapshot(".nonexistent", mockCmd);
+      assertEquals(result, null);
+    });
+
+    it("should return null when command throws", async () => {
+      const mockCmd = async (_args: string[]) => {
+        throw new Error("command not found");
+      };
+      const result = await tryScopedSnapshot("main", mockCmd);
+      assertEquals(result, null);
+    });
+
+    it("should pass correct args including selector", async () => {
+      let capturedArgs: string[] = [];
+      const mockCmd = async (args: string[]) => {
+        capturedArgs = args;
+        return { success: true, stdout: "x".repeat(60) };
+      };
+      await tryScopedSnapshot("#my-selector", mockCmd);
+      assertEquals(capturedArgs.includes("-s"), true);
+      assertEquals(capturedArgs.includes("#my-selector"), true);
+      assertEquals(capturedArgs.includes("-i"), true);
+      assertEquals(capturedArgs.includes("-c"), true);
+    });
+  });
+
+  describe("CONTENT_SELECTORS", () => {
+    it("should be a non-empty array of CSS selectors", () => {
+      assertEquals(CONTENT_SELECTORS.length > 0, true);
+      assertEquals(CONTENT_SELECTORS.includes("main"), true);
     });
   });
 
