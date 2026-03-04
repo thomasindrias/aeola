@@ -1,0 +1,22 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Deno / Node
+node_modules/
+
+# OS
+.DS_Store
+
+# Crawlee storage
+storage/
+
+# Playwright
+test-results/
+playwright-report/
