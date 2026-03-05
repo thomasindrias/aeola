@@ -222,4 +222,48 @@ describe("HTTP Server", () => {
     );
     assertEquals(response.status, 404);
   });
+
+  it("should serve landing page at GET / when landingHtml provided", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key", {
+      landingHtml: "<html><body>Agent Store</body></html>",
+    });
+    const response = await handler(new Request("http://localhost/"));
+    assertEquals(response.status, 200);
+    assertEquals(
+      response.headers.get("Content-Type"),
+      "text/html; charset=utf-8",
+    );
+    const body = await response.text();
+    assertEquals(body.includes("Agent Store"), true);
+  });
+
+  it("should not require auth for GET /", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key", {
+      landingHtml: "<html>Landing</html>",
+    });
+    const response = await handler(new Request("http://localhost/"));
+    assertEquals(response.status, 200);
+  });
+
+  it("should return 404 for GET / when no landingHtml provided", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/", {
+        headers: { "Authorization": "Bearer test-api-key" },
+      }),
+    );
+    assertEquals(response.status, 404);
+  });
+
+  it("should include CORS headers on landing page", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key", {
+      landingHtml: "<html>Landing</html>",
+    });
+    const response = await handler(new Request("http://localhost/"));
+    assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
+  });
 });

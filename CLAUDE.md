@@ -81,6 +81,9 @@ Five-component AI-first pipeline:
   duplicates
 - Rate limiting on `/ingest` only — sliding window per API key
 - CORS headers on all responses, configurable via `CORS_ORIGINS` env var
+- Registry notification is fire-and-forget with DI `fetchFn` for testability
+- Landing page served as self-contained HTML with `{{STRIPE_PAYMENT_LINK}}`
+  placeholder replaced at startup
 
 ## Project Structure
 
@@ -100,7 +103,9 @@ src/
 │   └── ratelimit.ts     # Sliding window rate limiter for /ingest
 ├── pipeline/ingest.ts   # Orchestration pipeline (discover → extract → LLM → store)
 ├── pipeline/wire.ts     # Dependency wiring for real ingest options
+├── registry/notify.ts   # Fire-and-forget registry notification (DI fetchFn)
 ├── spider/discovery.ts  # Playwright-based URL discovery with priority queue (with retry)
+├── static/landing.html  # Landing page (shadcn-inspired, self-contained HTML)
 ├── storage/db.ts        # SQLite database layer (upsert, indices)
 └── utils/
     ├── logger.ts        # Structured JSON logger
@@ -125,13 +130,16 @@ docker compose up --build
 
 ## Environment Variables
 
-| Variable         | Required | Default            | Description                                  |
-| ---------------- | -------- | ------------------ | -------------------------------------------- |
-| `API_KEY`        | Yes      | —                  | Bearer token for authenticating requests     |
-| `OPENAI_API_KEY` | Yes      | —                  | OpenAI API key for product data extraction   |
-| `DB_PATH`        | No       | `./agent-store.db` | SQLite database file path                    |
-| `PORT`           | No       | `8000`             | HTTP server port                             |
-| `CONCURRENCY`    | No       | `3`                | Max concurrent extraction workers (max 20)   |
-| `RATE_LIMIT`     | No       | `5`                | Max `/ingest` requests per minute per key    |
-| `CORS_ORIGINS`   | No       | `*`                | Allowed CORS origin(s)                       |
-| `LOG_LEVEL`      | No       | `info`             | Minimum log level (debug, info, warn, error) |
+| Variable              | Required | Default            | Description                                        |
+| --------------------- | -------- | ------------------ | -------------------------------------------------- |
+| `API_KEY`             | Yes      | —                  | Bearer token for authenticating requests           |
+| `OPENAI_API_KEY`      | Yes      | —                  | OpenAI API key for product data extraction         |
+| `DB_PATH`             | No       | `./agent-store.db` | SQLite database file path                          |
+| `PORT`                | No       | `8000`             | HTTP server port                                   |
+| `CONCURRENCY`         | No       | `3`                | Max concurrent extraction workers (max 20)         |
+| `RATE_LIMIT`          | No       | `5`                | Max `/ingest` requests per minute per key          |
+| `CORS_ORIGINS`        | No       | `*`                | Allowed CORS origin(s)                             |
+| `LOG_LEVEL`           | No       | `info`             | Minimum log level (debug, info, warn, error)       |
+| `STRIPE_PAYMENT_LINK` | No       | `#`                | Stripe Payment Link URL for managed cloud CTA      |
+| `REGISTRY_ENABLED`    | No       | `false`            | Enable fire-and-forget registry notification       |
+| `REGISTRY_URL`        | No       | —                  | Registry endpoint URL for post-ingest notification |

@@ -155,4 +155,62 @@ describe("Ingestion Pipeline", () => {
     // Should have actually run concurrently (max > 1)
     assertEquals(maxConcurrent > 1, true);
   });
+
+  it("should call registry notification after successful ingestion when enabled", async () => {
+    db = createDatabase(":memory:");
+    let registryCalled = false;
+    let capturedPayload: Record<string, unknown> = {};
+
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Registry Test Shop",
+      discover: () => Promise.resolve(["https://shop.example.com/product/1"]),
+      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product"`),
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", category: "Gadgets", price: 10 },
+        }),
+      registryEnabled: true,
+      registryUrl: "https://registry.example.com/register",
+      registryFetchFn: (_input: string | URL | Request, init?: RequestInit) => {
+        registryCalled = true;
+        capturedPayload = JSON.parse(init?.body as string);
+        return Promise.resolve(new Response("ok"));
+      },
+    });
+
+    // Allow fire-and-forget to complete
+    await new Promise((r) => setTimeout(r, 50));
+
+    assertEquals(result.productsIngested, 1);
+    assertEquals(registryCalled, true);
+    assertEquals(capturedPayload.domain, "shop.example.com");
+  });
+
+  it("should not call registry when registryEnabled is false", async () => {
+    db = createDatabase(":memory:");
+    let registryCalled = false;
+
+    await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "No Registry Shop",
+      discover: () => Promise.resolve(["https://shop.example.com/product/1"]),
+      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product"`),
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", price: 10 },
+        }),
+      registryEnabled: false,
+      registryUrl: "https://registry.example.com/register",
+      registryFetchFn: () => {
+        registryCalled = true;
+        return Promise.resolve(new Response("ok"));
+      },
+    });
+
+    await new Promise((r) => setTimeout(r, 50));
+    assertEquals(registryCalled, false);
+  });
 });

@@ -1,5 +1,8 @@
 # Agent Store
 
+[![Self-Host](https://img.shields.io/badge/Self--Host-Free-brightgreen)](#run-locally)
+[![Managed Cloud](https://img.shields.io/badge/AgentStore_Cloud-%2499%2Fmo-blue)](#)
+
 **Agent Engine Optimization (AEO) infrastructure** — makes e-commerce product
 data discoverable and consumable by AI agents via
 [MCP](https://modelcontextprotocol.io/).
@@ -94,6 +97,7 @@ Full API documentation available at `GET /openapi.json` (unauthenticated).
 
 | Endpoint                         | Method | Auth | Description                                          |
 | -------------------------------- | ------ | ---- | ---------------------------------------------------- |
+| `/`                              | GET    | No   | Landing page (when `landing.html` exists)            |
 | `/health`                        | GET    | No   | Health check for load balancers / k8s probes         |
 | `/openapi.json`                  | GET    | No   | OpenAPI 3.1 specification                            |
 | `/ingest`                        | POST   | Yes  | Trigger merchant crawl and extraction (rate limited) |
@@ -195,12 +199,17 @@ src/
 │   ├── ingest_test.ts
 │   ├── wire.ts            # Dependency wiring for real ingest options
 │   └── wire_test.ts
+├── registry/
+│   ├── notify.ts          # Fire-and-forget registry notification
+│   └── notify_test.ts
 ├── spider/
 │   ├── discovery.ts       # Playwright-based URL discovery (with retry)
 │   └── discovery_test.ts
 ├── storage/
 │   ├── db.ts              # SQLite database layer (upsert, indices)
 │   └── db_test.ts
+├── static/
+│   └── landing.html       # Landing page (shadcn-inspired, self-contained)
 └── utils/
     ├── logger.ts          # Structured JSON logger
     ├── logger_test.ts
@@ -224,16 +233,19 @@ src/
 
 ## Environment Variables
 
-| Variable         | Required | Default            | Description                                  |
-| ---------------- | -------- | ------------------ | -------------------------------------------- |
-| `API_KEY`        | Yes      | —                  | Bearer token for authenticating requests     |
-| `OPENAI_API_KEY` | Yes      | —                  | OpenAI API key for product data extraction   |
-| `DB_PATH`        | No       | `./agent-store.db` | SQLite database file path                    |
-| `PORT`           | No       | `8000`             | HTTP server port                             |
-| `CONCURRENCY`    | No       | `3`                | Max concurrent extraction workers (max 20)   |
-| `RATE_LIMIT`     | No       | `5`                | Max `/ingest` requests per minute per key    |
-| `CORS_ORIGINS`   | No       | `*`                | Allowed CORS origin(s)                       |
-| `LOG_LEVEL`      | No       | `info`             | Minimum log level (debug, info, warn, error) |
+| Variable              | Required | Default            | Description                                        |
+| --------------------- | -------- | ------------------ | -------------------------------------------------- |
+| `API_KEY`             | Yes      | —                  | Bearer token for authenticating requests           |
+| `OPENAI_API_KEY`      | Yes      | —                  | OpenAI API key for product data extraction         |
+| `DB_PATH`             | No       | `./agent-store.db` | SQLite database file path                          |
+| `PORT`                | No       | `8000`             | HTTP server port                                   |
+| `CONCURRENCY`         | No       | `3`                | Max concurrent extraction workers (max 20)         |
+| `RATE_LIMIT`          | No       | `5`                | Max `/ingest` requests per minute per key          |
+| `CORS_ORIGINS`        | No       | `*`                | Allowed CORS origin(s)                             |
+| `LOG_LEVEL`           | No       | `info`             | Minimum log level (debug, info, warn, error)       |
+| `STRIPE_PAYMENT_LINK` | No       | `#`                | Stripe Payment Link URL for managed cloud CTA      |
+| `REGISTRY_ENABLED`    | No       | `false`            | Enable fire-and-forget registry notification       |
+| `REGISTRY_URL`        | No       | —                  | Registry endpoint URL for post-ingest notification |
 
 ## License
 

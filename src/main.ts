@@ -56,6 +56,7 @@ export function createHttpHandler(
     logger?: Logger;
     rateLimitMax?: number;
     corsOrigin?: string;
+    landingHtml?: string;
   },
 ) {
   const ingestFn = options?.ingestFn ?? defaultIngest;
@@ -65,6 +66,7 @@ export function createHttpHandler(
     windowMs: 60_000,
   });
   const corsOrigin = options?.corsOrigin ?? "*";
+  const landingHtml = options?.landingHtml;
   const apiHandler = createApiHandler(db);
   return async (request: Request): Promise<Response> => {
     const start = Date.now();
@@ -86,6 +88,15 @@ export function createHttpHandler(
     }
 
     // Unauthenticated endpoints
+    if (url.pathname === "/" && request.method === "GET" && landingHtml) {
+      return respond(
+        new Response(landingHtml, {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        }),
+      );
+    }
+
     if (url.pathname === "/openapi.json") {
       return respond(
         new Response(JSON.stringify(getOpenApiSpec()), {
@@ -223,10 +234,20 @@ if (import.meta.main) {
   const db = createDatabase(dbPath);
   const rateLimitMax = parseInt(Deno.env.get("RATE_LIMIT") ?? "5");
   const corsOrigin = Deno.env.get("CORS_ORIGINS") ?? "*";
+  const stripeLink = Deno.env.get("STRIPE_PAYMENT_LINK") ?? "#";
+  const landingPath = `${import.meta.dirname}/static/landing.html`;
+  let landingHtml: string | undefined;
+  try {
+    landingHtml = Deno.readTextFileSync(landingPath)
+      .replaceAll("{{STRIPE_PAYMENT_LINK}}", stripeLink);
+  } catch {
+    log.warn("landing page not found", { path: landingPath });
+  }
   const handler = createHttpHandler(db, apiKey, {
     logger: log,
     rateLimitMax,
     corsOrigin,
+    landingHtml,
   });
   const port = parseInt(Deno.env.get("PORT") ?? "8000");
 

@@ -1,6 +1,7 @@
 import type { Database } from "@db/sqlite";
 import { addProduct, getOrCreateMerchant } from "../storage/db.ts";
 import type { Logger } from "../utils/logger.ts";
+import { extractCategories, notifyRegistry } from "../registry/notify.ts";
 
 export interface IngestOptions {
   url: string;
@@ -17,6 +18,9 @@ export interface IngestOptions {
   openaiClient?: unknown;
   concurrency?: number;
   logger?: Logger;
+  registryEnabled?: boolean;
+  registryUrl?: string;
+  registryFetchFn?: typeof fetch;
 }
 
 export interface IngestResult {
@@ -70,6 +74,7 @@ export async function ingestMerchant(
 
   let productsIngested = 0;
   const errors: string[] = [];
+  const productDataList: Record<string, unknown>[] = [];
 
   // Phase 2 & 3: Extract snapshot + Process with LLM with bounded concurrency
   await processWithConcurrency(productUrls, concurrency, async (productUrl) => {
@@ -81,6 +86,7 @@ export async function ingestMerchant(
         productUrl,
       );
       addProduct(db, { merchantId, sourceUrl: productUrl, data, schema });
+      productDataList.push(data);
       productsIngested++;
     } catch (e) {
       const msg = (e as Error).message;
@@ -94,6 +100,18 @@ export async function ingestMerchant(
     productsIngested,
     errors: errors.length,
   });
+
+  if (options.registryEnabled && options.registryUrl) {
+    const domain = new URL(url).hostname;
+    const categories = extractCategories(productDataList);
+    notifyRegistry(options.registryUrl, {
+      domain,
+      merchantName: name,
+      productCount: productsIngested,
+      categories,
+    }, { logger: log, fetchFn: options.registryFetchFn }).catch(() => {});
+  }
+
   return {
     merchantId,
     productsIngested,

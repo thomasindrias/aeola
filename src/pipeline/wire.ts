@@ -15,5 +15,7 @@ export function buildIngestOptions(url: string, name: string): IngestOptions {
       extractProductData(client as OpenAI, snapshotText, sourceUrl),
     openaiClient: client,
     concurrency: Math.min(parseInt(Deno.env.get("CONCURRENCY") ?? "3"), 20),
+    registryEnabled: Deno.env.get("REGISTRY_ENABLED") === "true",
+    registryUrl: Deno.env.get("REGISTRY_URL"),
   };
 }
