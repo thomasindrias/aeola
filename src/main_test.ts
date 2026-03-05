@@ -292,4 +292,23 @@ describe("HTTP Server", () => {
     const response = await handler(new Request("http://localhost/"));
     assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
   });
+
+  it("should include pipeline section in landing page", async () => {
+    const landingHtml = Deno.readTextFileSync(
+      new URL("./static/landing.html", import.meta.url).pathname,
+    );
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key", {
+      landingHtml,
+    });
+    const response = await handler(new Request("http://localhost/"));
+    const body = await response.text();
+    assertEquals(body.includes('id="pipeline"'), true);
+    assertEquals(body.includes("How It Works"), true);
+    assertEquals(body.includes("Discovery"), true);
+    assertEquals(body.includes("Delivery"), true);
+    assertEquals(body.includes("pipeline-node"), true);
+    assertEquals(body.includes("pipeline-connector"), true);
+    assertEquals(body.includes("prefers-reduced-motion"), true);
+  });
 });
