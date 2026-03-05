@@ -1,7 +1,7 @@
 # Aeola
 
 [![Self-Host](https://img.shields.io/badge/Self--Host-Free-brightgreen)](#run-locally)
-[![Managed Cloud](https://img.shields.io/badge/Aeola_Cloud-%2499%2Fmo-blue)](#)
+[![Managed Cloud](https://img.shields.io/badge/Aeola_Cloud-%2499%2Fmo-blue)](https://aeola.onrender.com/)
 
 <p align="center">
 <img width="720" height="470" alt="Skärmavbild 2026-03-05 kl  08 22 22" src="https://github.com/user-attachments/assets/5f2c0a7e-6da0-4142-bf5d-d32e4fb34d7b" />
