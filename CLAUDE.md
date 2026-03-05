@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Aeola is an **Agent Engine Optimization (AEO)** infrastructure layer — it
-makes e-commerce product data discoverable and consumable by AI agents, not just
-human browsers.
+Aeola is an **Agent Engine Optimization (AEO)** infrastructure layer — it makes
+e-commerce product data discoverable and consumable by AI agents, not just human
+browsers.
 
 Where SEO optimized websites for search engine crawlers, AEO optimizes data for
 **agentic systems** — LLMs, shopping agents, and autonomous commerce protocols
@@ -12,10 +12,10 @@ that need structured, machine-readable product information to recommend,
 compare, and transact on behalf of users. In the emerging agent economy, if your
 products aren't in a format agents can consume, you're invisible.
 
-Aeola bridges this gap: it crawls traditional e-commerce sites,
-dynamically extracts product data using LLMs (no hardcoded schemas), and serves
-it via MCP — the open protocol that AI agents use to discover and consume
-external data and tools.
+Aeola bridges this gap: it crawls traditional e-commerce sites, dynamically
+extracts product data using LLMs (no hardcoded schemas), and serves it via MCP —
+the open protocol that AI agents use to discover and consume external data and
+tools.
 
 ### Where This Fits
 
@@ -25,13 +25,11 @@ external data and tools.
   agent selects."
 - **ACP (Agent Commerce Protocol)** — Protocols like Virtuals Protocol's ACP
   enable autonomous agent-to-agent commerce with on-chain escrow and
-  verification. Aeola provides the structured product catalog that these
-  agent marketplaces need to function — agents can't buy what they can't
-  discover.
+  verification. Aeola provides the structured product catalog that these agent
+  marketplaces need to function — agents can't buy what they can't discover.
 - **MCP (Model Context Protocol)** — The open standard for how LLM applications
-  connect to external data. Aeola exposes product data as MCP tools,
-  making any merchant's catalog instantly accessible to any MCP-compatible AI
-  agent.
+  connect to external data. Aeola exposes product data as MCP tools, making any
+  merchant's catalog instantly accessible to any MCP-compatible AI agent.
 
 ## Architecture
 
@@ -130,16 +128,16 @@ docker compose up --build
 
 ## Environment Variables
 
-| Variable              | Required | Default            | Description                                        |
-| --------------------- | -------- | ------------------ | -------------------------------------------------- |
-| `API_KEY`             | Yes      | —                  | Bearer token for authenticating requests           |
-| `OPENAI_API_KEY`      | Yes      | —                  | OpenAI API key for product data extraction         |
+| Variable              | Required | Default      | Description                                        |
+| --------------------- | -------- | ------------ | -------------------------------------------------- |
+| `API_KEY`             | Yes      | —            | Bearer token for authenticating requests           |
+| `OPENAI_API_KEY`      | Yes      | —            | OpenAI API key for product data extraction         |
 | `DB_PATH`             | No       | `./aeola.db` | SQLite database file path                          |
-| `PORT`                | No       | `8000`             | HTTP server port                                   |
-| `CONCURRENCY`         | No       | `3`                | Max concurrent extraction workers (max 20)         |
-| `RATE_LIMIT`          | No       | `5`                | Max `/ingest` requests per minute per key          |
-| `CORS_ORIGINS`        | No       | `*`                | Allowed CORS origin(s)                             |
-| `LOG_LEVEL`           | No       | `info`             | Minimum log level (debug, info, warn, error)       |
-| `STRIPE_PAYMENT_LINK` | No       | `#`                | Stripe Payment Link URL for managed cloud CTA      |
-| `REGISTRY_ENABLED`    | No       | `false`            | Enable fire-and-forget registry notification       |
-| `REGISTRY_URL`        | No       | —                  | Registry endpoint URL for post-ingest notification |
+| `PORT`                | No       | `8000`       | HTTP server port                                   |
+| `CONCURRENCY`         | No       | `3`          | Max concurrent extraction workers (max 20)         |
+| `RATE_LIMIT`          | No       | `5`          | Max `/ingest` requests per minute per key          |
+| `CORS_ORIGINS`        | No       | `*`          | Allowed CORS origin(s)                             |
+| `LOG_LEVEL`           | No       | `info`       | Minimum log level (debug, info, warn, error)       |
+| `STRIPE_PAYMENT_LINK` | No       | `#`          | Stripe Payment Link URL for managed cloud CTA      |
+| `REGISTRY_ENABLED`    | No       | `false`      | Enable fire-and-forget registry notification       |
+| `REGISTRY_URL`        | No       | —            | Registry endpoint URL for post-ingest notification |

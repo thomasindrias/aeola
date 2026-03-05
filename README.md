@@ -233,19 +233,19 @@ src/
 
 ## Environment Variables
 
-| Variable              | Required | Default            | Description                                        |
-| --------------------- | -------- | ------------------ | -------------------------------------------------- |
-| `API_KEY`             | Yes      | —                  | Bearer token for authenticating requests           |
-| `OPENAI_API_KEY`      | Yes      | —                  | OpenAI API key for product data extraction         |
+| Variable              | Required | Default      | Description                                        |
+| --------------------- | -------- | ------------ | -------------------------------------------------- |
+| `API_KEY`             | Yes      | —            | Bearer token for authenticating requests           |
+| `OPENAI_API_KEY`      | Yes      | —            | OpenAI API key for product data extraction         |
 | `DB_PATH`             | No       | `./aeola.db` | SQLite database file path                          |
-| `PORT`                | No       | `8000`             | HTTP server port                                   |
-| `CONCURRENCY`         | No       | `3`                | Max concurrent extraction workers (max 20)         |
-| `RATE_LIMIT`          | No       | `5`                | Max `/ingest` requests per minute per key          |
-| `CORS_ORIGINS`        | No       | `*`                | Allowed CORS origin(s)                             |
-| `LOG_LEVEL`           | No       | `info`             | Minimum log level (debug, info, warn, error)       |
-| `STRIPE_PAYMENT_LINK` | No       | `#`                | Stripe Payment Link URL for managed cloud CTA      |
-| `REGISTRY_ENABLED`    | No       | `false`            | Enable fire-and-forget registry notification       |
-| `REGISTRY_URL`        | No       | —                  | Registry endpoint URL for post-ingest notification |
+| `PORT`                | No       | `8000`       | HTTP server port                                   |
+| `CONCURRENCY`         | No       | `3`          | Max concurrent extraction workers (max 20)         |
+| `RATE_LIMIT`          | No       | `5`          | Max `/ingest` requests per minute per key          |
+| `CORS_ORIGINS`        | No       | `*`          | Allowed CORS origin(s)                             |
+| `LOG_LEVEL`           | No       | `info`       | Minimum log level (debug, info, warn, error)       |
+| `STRIPE_PAYMENT_LINK` | No       | `#`          | Stripe Payment Link URL for managed cloud CTA      |
+| `REGISTRY_ENABLED`    | No       | `false`      | Enable fire-and-forget registry notification       |
+| `REGISTRY_URL`        | No       | —            | Registry endpoint URL for post-ingest notification |
 
 ## License
 
