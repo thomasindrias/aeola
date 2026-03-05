@@ -1,0 +1,125 @@
+# Domain Knowledge
+
+> Last reviewed: 2026-03-05
+
+## Overview
+
+Aeola is AEO infrastructure — it makes e-commerce product data discoverable and
+consumable by AI agents. Where SEO optimized for search engine crawlers, AEO
+optimizes for agentic systems that need structured, machine-readable product
+information to recommend, compare, and transact on behalf of users.
+
+Aeola's pipeline: crawl merchant sites -> extract compact accessibility tree
+snapshots (~200-400 tokens per page) -> dynamically infer product schemas with
+LLMs -> store structured JSON -> serve via MCP tools and REST API.
+
+## AEO (Agent Engine Optimization)
+
+### Aeola's Definition
+
+In this project, AEO means "Agent Engine Optimization" — making product data
+agent-consumable. This is broader than the industry's "Answer Engine
+Optimization" (optimizing content to appear in AI-generated search answers).
+Aeola doesn't just help merchants be _found_ by AI — it makes their data
+_consumable and actionable_ by autonomous agents.
+
+### The Optimization Evolution
+
+- **SEO** — be found by search engines
+- **AEO** — be the answer AI selects
+- **AIEO** — be the recommendation AI makes
+- **AAO** — be chosen when no human is in the loop
+
+Each layer absorbs the previous. The key shift: engines that recommend -> agents
+that act.
+
+### Where Aeola Fits
+
+Aeola sits at the infrastructure layer. Merchants can't optimize for agents if
+their product data isn't structured. Aeola solves this:
+
+- Crawls unstructured merchant websites (Playwright)
+- Extracts compact page snapshots (~200-400 tokens via Agent Browser)
+- Dynamically infers product schemas (OpenAI, no hardcoded schemas)
+- Serves structured data via MCP + REST
+
+Without this layer, agents can't discover products, and ACP transactions can't
+happen. Aeola is the bridge between unstructured web content and the agent
+economy.
+
+### Key Concepts
+
+- **GEO vs AEO**: "GEO gets you into the conversation; AEO gets you into the
+  workflow." GEO = visibility in AI summaries. AEO = integration into agent
+  actions.
+- **AXO (Agent Experience Optimization)**: The 2026 bar — sites must be
+  agent-ready with structured data, semantic HTML, and agent-readable formats.
+- **CLEAR framework**: Concise, Logical headings, Evidence-based, Accessible.
+
+## ACP (Agentic Commerce Protocol)
+
+### Stripe/OpenAI ACP
+
+The open standard for programmatic commerce between buyers, AI agents, and
+businesses (agenticcommerce.dev). REST and MCP compatible. Apache 2.0.
+
+Key capabilities:
+
+- Checkout sessions (create, update, complete, cancel)
+- Delegated payments via Stripe Shared Payment Tokens (PCI-compliant)
+- Physical/digital goods, subscriptions, async purchase flows
+- First adoption: OpenAI Instant Checkout in ChatGPT
+
+Stakeholder roles:
+
+- **Businesses**: maintain merchant-of-record status, control product selection
+  and fulfillment through agent-facing endpoints
+- **AI Agents**: embed commerce without assuming merchant responsibility
+- **Payment Providers**: process agentic transactions via token exchange
+
+### Virtuals Protocol ACP
+
+A distinct protocol — agent-to-agent on-chain commerce with escrow.
+Crypto-native, for autonomous agent service marketplaces. Adjacent but separate
+from Stripe/OpenAI's ACP.
+
+### Aeola's Relationship to ACP
+
+Aeola is upstream of ACP. Agents need structured product catalogs to transact —
+Aeola provides that catalog. Future integration: expose product data in
+ACP-compatible format so agents can discover products and initiate checkout
+sessions directly.
+
+## MCP (Model Context Protocol)
+
+Open protocol standardizing how LLM applications connect to external data and
+tools. Servers expose tools, resources, and prompts; clients connect and call
+them.
+
+How Aeola uses MCP:
+
+- Exposes four tools: list_products, search_products, get_product,
+  ingest_merchant
+- Streamable HTTP transport (SSE is deprecated)
+- Any MCP-compatible agent (Claude, ChatGPT, custom) can query Aeola's product
+  catalog
+- MCP is the delivery mechanism; Aeola is the data pipeline
+
+## Glossary
+
+| Term | Definition                                                                |
+| ---- | ------------------------------------------------------------------------- |
+| AEO  | Agent Engine Optimization (Aeola) / Answer Engine Optimization (industry) |
+| AIEO | AI Engine Optimization — be the recommendation                            |
+| AAO  | Assistive Agent Optimization — be chosen autonomously                     |
+| AXO  | Agent Experience Optimization — agent-readiness standard                  |
+| GEO  | Generative Engine Optimization — visibility in AI summaries               |
+| ACP  | Agentic Commerce Protocol — programmatic commerce standard                |
+| MCP  | Model Context Protocol — LLM-to-external-data standard                    |
+
+## References
+
+- https://agenticcommerce.dev — ACP specification (Stripe/OpenAI)
+- https://developers.openai.com/commerce — OpenAI Agentic Commerce docs
+- https://modelcontextprotocol.io — MCP specification
+- https://searchengineland.com/aao-assistive-agent-optimization-469919

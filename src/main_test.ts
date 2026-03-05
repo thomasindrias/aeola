@@ -1,5 +1,5 @@
 import { afterEach, describe, it } from "@std/testing/bdd";
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import { createHttpHandler } from "./main.ts";
 import { createDatabase } from "./storage/db.ts";
 
@@ -190,6 +190,17 @@ describe("HTTP Server", () => {
     const spec = await response.json();
     assertEquals(spec.openapi, "3.1.0");
     assertEquals(spec.info.title, "Aeola API");
+  });
+
+  it("should include Aeola branding in OpenAPI spec", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/openapi.json"),
+    );
+    const spec = await response.json();
+    assert(spec.info.description.includes("Aeola"));
+    assert(spec.info.description.includes("Agent Engine Optimization"));
   });
 
   it("should return 204 for OPTIONS preflight with CORS headers", async () => {

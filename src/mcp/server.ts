@@ -37,7 +37,8 @@ export function createMcpServer(
   server.registerTool(
     "list_products",
     {
-      description: "List all products for a given merchant",
+      description:
+        "List all products for a given merchant from Aeola's catalog. Returns structured product data extracted from the merchant's e-commerce site.",
       inputSchema: z.object({
         merchantId: z.number().describe("The merchant ID"),
       }),
@@ -53,7 +54,8 @@ export function createMcpServer(
   server.registerTool(
     "search_products",
     {
-      description: "Search products across all merchants by keyword",
+      description:
+        "Search Aeola's product catalog across all merchants by keyword. Use this to find, compare, and recommend products from agent-readable catalogs.",
       inputSchema: z.object({
         query: z.string().describe("Search keyword"),
       }),
@@ -69,7 +71,8 @@ export function createMcpServer(
   server.registerTool(
     "get_product",
     {
-      description: "Get a single product by its ID",
+      description:
+        "Get detailed product data by ID from Aeola's catalog, including dynamically extracted attributes like price, description, and availability.",
       inputSchema: z.object({
         productId: z.number().describe("The product ID"),
       }),
@@ -94,7 +97,7 @@ export function createMcpServer(
     "ingest_merchant",
     {
       description:
-        "Crawl an e-commerce website and extract all product data. This is a long-running operation.",
+        "Ingest a merchant into Aeola — crawls the e-commerce website, extracts product data into agent-readable structured format, and stores it for querying. This is a long-running operation.",
       inputSchema: z.object({
         url: z.string().url().describe("The merchant website URL"),
         name: z.string().describe("A name for this merchant"),

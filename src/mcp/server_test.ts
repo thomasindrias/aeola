@@ -1,5 +1,5 @@
 import { afterEach, describe, it } from "@std/testing/bdd";
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "./server.ts";
@@ -177,6 +177,19 @@ describe("MCP Server", () => {
       (result.content as Array<{ type: string; text: string }>)[0].text,
     );
     assertEquals(body.error, "Only http/https URLs are supported");
+    await client.close();
+  });
+
+  it("should include Aeola branding in tool descriptions", async () => {
+    db = createDatabase(":memory:");
+    const client = await createTestClient(db);
+    const { tools } = await client.listTools();
+    for (const tool of tools) {
+      assert(
+        tool.description?.includes("Aeola"),
+        `Tool ${tool.name} should mention Aeola in its description`,
+      );
+    }
     await client.close();
   });
 

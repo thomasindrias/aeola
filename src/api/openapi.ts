@@ -5,7 +5,9 @@ export function getOpenApiSpec() {
       title: "Aeola API",
       version: "1.0.0",
       description:
-        "AEO infrastructure — makes e-commerce product data discoverable and consumable by AI agents via REST and MCP.",
+        "Aeola — Agent Engine Optimization (AEO) infrastructure that crawls " +
+        "e-commerce sites, extracts product data using LLMs, and serves " +
+        "structured, agent-readable catalogs via REST and MCP.",
       license: {
         name: "AGPL-3.0",
         url: "https://www.gnu.org/licenses/agpl-3.0.html",
@@ -90,7 +92,9 @@ export function getOpenApiSpec() {
         post: {
           summary: "Ingest a merchant website",
           description:
-            "Crawls a merchant URL, extracts product data using LLM, and stores it.",
+            "Ingest a merchant into Aeola — crawls the URL, extracts product data " +
+            "into agent-readable structured format using LLM-based schema inference, " +
+            "and stores it for querying.",
           requestBody: {
             required: true,
             content: {
@@ -254,7 +258,9 @@ export function getOpenApiSpec() {
         post: {
           summary: "MCP endpoint",
           description:
-            "Model Context Protocol endpoint for AI agent integration.",
+            "Aeola's Model Context Protocol endpoint for AI agent integration. " +
+            "Agents can list, search, and retrieve product data from ingested " +
+            "merchant catalogs.",
           responses: {
             "200": { description: "MCP response" },
           },

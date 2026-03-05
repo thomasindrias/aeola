@@ -23,10 +23,11 @@ tools.
   AI assistants (ChatGPT, Claude, Perplexity, etc.) can find, trust, and
   recommend products. The shift from "rank on page 1" to "be the answer the
   agent selects."
-- **ACP (Agent Commerce Protocol)** — Protocols like Virtuals Protocol's ACP
-  enable autonomous agent-to-agent commerce with on-chain escrow and
-  verification. Aeola provides the structured product catalog that these agent
-  marketplaces need to function — agents can't buy what they can't discover.
+- **ACP (Agentic Commerce Protocol)** — The open standard by Stripe & OpenAI for
+  programmatic commerce between buyers, AI agents, and businesses. Aeola
+  provides the structured product catalog that agents need to discover and
+  transact. See `docs/domain.md` for full context including disambiguation from
+  Virtuals Protocol's on-chain ACP.
 - **MCP (Model Context Protocol)** — The open standard for how LLM applications
   connect to external data. Aeola exposes product data as MCP tools, making any
   merchant's catalog instantly accessible to any MCP-compatible AI agent.
