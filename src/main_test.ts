@@ -189,7 +189,7 @@ describe("HTTP Server", () => {
     assertEquals(response.status, 200);
     const spec = await response.json();
     assertEquals(spec.openapi, "3.1.0");
-    assertEquals(spec.info.title, "Agent Store API");
+    assertEquals(spec.info.title, "Aeola API");
   });
 
   it("should return 204 for OPTIONS preflight with CORS headers", async () => {
@@ -226,7 +226,7 @@ describe("HTTP Server", () => {
   it("should serve landing page at GET / when landingHtml provided", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key", {
-      landingHtml: "<html><body>Agent Store</body></html>",
+      landingHtml: "<html><body>Aeola</body></html>",
     });
     const response = await handler(new Request("http://localhost/"));
     assertEquals(response.status, 200);
@@ -235,7 +235,7 @@ describe("HTTP Server", () => {
       "text/html; charset=utf-8",
     );
     const body = await response.text();
-    assertEquals(body.includes("Agent Store"), true);
+    assertEquals(body.includes("Aeola"), true);
   });
 
   it("should not require auth for GET /", async () => {

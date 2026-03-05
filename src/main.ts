@@ -230,7 +230,7 @@ if (import.meta.main) {
     Deno.exit(1);
   }
 
-  const dbPath = Deno.env.get("DB_PATH") ?? "./agent-store.db";
+  const dbPath = Deno.env.get("DB_PATH") ?? "./aeola.db";
   const db = createDatabase(dbPath);
   const rateLimitMax = parseInt(Deno.env.get("RATE_LIMIT") ?? "5");
   const corsOrigin = Deno.env.get("CORS_ORIGINS") ?? "*";

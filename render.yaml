@@ -1,8 +1,8 @@
 services:
   - type: web
-    name: agent-store
+    name: aeola
     runtime: docker
-    repo: https://github.com/thomasindrias/agent-store.git
+    repo: https://github.com/thomasindrias/aeola.git
     branch: main
     plan: starter
     healthCheckPath: /health
@@ -14,7 +14,7 @@ services:
       - key: STRIPE_PAYMENT_LINK
         value: https://buy.stripe.com/aFa9AM0EBh2N9ZPf2f3Nm00
       - key: DB_PATH
-        value: /data/agent-store.db
+        value: /data/aeola.db
       - key: PORT
         value: "8000"
       - key: CONCURRENCY
@@ -24,6 +24,6 @@ services:
       - key: LOG_LEVEL
         value: info
     disk:
-      name: agent-store-data
+      name: aeola-data
       mountPath: /data
       sizeGB: 1

@@ -1,7 +1,7 @@
-# Agent Store
+# Aeola
 
 [![Self-Host](https://img.shields.io/badge/Self--Host-Free-brightgreen)](#run-locally)
-[![Managed Cloud](https://img.shields.io/badge/AgentStore_Cloud-%2499%2Fmo-blue)](#)
+[![Managed Cloud](https://img.shields.io/badge/Aeola_Cloud-%2499%2Fmo-blue)](#)
 
 **Agent Engine Optimization (AEO) infrastructure** — makes e-commerce product
 data discoverable and consumable by AI agents via
@@ -237,7 +237,7 @@ src/
 | --------------------- | -------- | ------------------ | -------------------------------------------------- |
 | `API_KEY`             | Yes      | —                  | Bearer token for authenticating requests           |
 | `OPENAI_API_KEY`      | Yes      | —                  | OpenAI API key for product data extraction         |
-| `DB_PATH`             | No       | `./agent-store.db` | SQLite database file path                          |
+| `DB_PATH`             | No       | `./aeola.db` | SQLite database file path                          |
 | `PORT`                | No       | `8000`             | HTTP server port                                   |
 | `CONCURRENCY`         | No       | `3`                | Max concurrent extraction workers (max 20)         |
 | `RATE_LIMIT`          | No       | `5`                | Max `/ingest` requests per minute per key          |

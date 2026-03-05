@@ -2,7 +2,7 @@ export function getOpenApiSpec() {
   return {
     openapi: "3.1.0",
     info: {
-      title: "Agent Store API",
+      title: "Aeola API",
       version: "1.0.0",
       description:
         "AEO infrastructure — makes e-commerce product data discoverable and consumable by AI agents via REST and MCP.",

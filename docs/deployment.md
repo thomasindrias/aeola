@@ -17,14 +17,14 @@ Pass via `.env` file or `docker compose` environment:
 
 ```yaml
 services:
-  agent-store:
+  aeola:
     build: .
     ports:
       - "8000:8000"
     environment:
       - API_KEY=your-secret-key
       - OPENAI_API_KEY=sk-...
-      - DB_PATH=/data/agent-store.db
+      - DB_PATH=/data/aeola.db
       - PORT=8000
       - CONCURRENCY=3
       - RATE_LIMIT=5
@@ -39,7 +39,7 @@ services:
 Mount a volume for the SQLite database:
 
 ```bash
-docker run -v ./data:/data -e DB_PATH=/data/agent-store.db ...
+docker run -v ./data:/data -e DB_PATH=/data/aeola.db ...
 ```
 
 ## Railway
@@ -72,11 +72,11 @@ Create `fly.toml`:
   auto_start_machines = true
 
 [mounts]
-  source = "agent_store_data"
+  source = "aeola_data"
   destination = "/data"
 
 [env]
-  DB_PATH = "/data/agent-store.db"
+  DB_PATH = "/data/aeola.db"
   PORT = "8000"
 ```
 

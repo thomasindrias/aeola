@@ -1,8 +1,8 @@
-# Agent Store
+# Aeola
 
 ## Purpose
 
-Agent Store is an **Agent Engine Optimization (AEO)** infrastructure layer — it
+Aeola is an **Agent Engine Optimization (AEO)** infrastructure layer — it
 makes e-commerce product data discoverable and consumable by AI agents, not just
 human browsers.
 
@@ -12,7 +12,7 @@ that need structured, machine-readable product information to recommend,
 compare, and transact on behalf of users. In the emerging agent economy, if your
 products aren't in a format agents can consume, you're invisible.
 
-Agent Store bridges this gap: it crawls traditional e-commerce sites,
+Aeola bridges this gap: it crawls traditional e-commerce sites,
 dynamically extracts product data using LLMs (no hardcoded schemas), and serves
 it via MCP — the open protocol that AI agents use to discover and consume
 external data and tools.
@@ -25,11 +25,11 @@ external data and tools.
   agent selects."
 - **ACP (Agent Commerce Protocol)** — Protocols like Virtuals Protocol's ACP
   enable autonomous agent-to-agent commerce with on-chain escrow and
-  verification. Agent Store provides the structured product catalog that these
+  verification. Aeola provides the structured product catalog that these
   agent marketplaces need to function — agents can't buy what they can't
   discover.
 - **MCP (Model Context Protocol)** — The open standard for how LLM applications
-  connect to external data. Agent Store exposes product data as MCP tools,
+  connect to external data. Aeola exposes product data as MCP tools,
   making any merchant's catalog instantly accessible to any MCP-compatible AI
   agent.
 
@@ -134,7 +134,7 @@ docker compose up --build
 | --------------------- | -------- | ------------------ | -------------------------------------------------- |
 | `API_KEY`             | Yes      | —                  | Bearer token for authenticating requests           |
 | `OPENAI_API_KEY`      | Yes      | —                  | OpenAI API key for product data extraction         |
-| `DB_PATH`             | No       | `./agent-store.db` | SQLite database file path                          |
+| `DB_PATH`             | No       | `./aeola.db` | SQLite database file path                          |
 | `PORT`                | No       | `8000`             | HTTP server port                                   |
 | `CONCURRENCY`         | No       | `3`                | Max concurrent extraction workers (max 20)         |
 | `RATE_LIMIT`          | No       | `5`                | Max `/ingest` requests per minute per key          |

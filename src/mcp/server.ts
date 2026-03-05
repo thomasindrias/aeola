@@ -30,7 +30,7 @@ export function createMcpServer(
 ): McpServer {
   const ingestFn = options?.ingestFn ?? defaultIngest;
   const server = new McpServer({
-    name: "agent-store",
+    name: "aeola",
     version: "1.0.0",
   });
 
