@@ -1,7 +1,12 @@
 import { afterEach, describe, it } from "@std/testing/bdd";
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertExists } from "@std/assert";
 import { ingestMerchant } from "./ingest.ts";
-import { createDatabase, getProductsByMerchant } from "../storage/db.ts";
+import {
+  createDatabase,
+  getCategoriesByMerchant,
+  getIngestionJob,
+  getProductsByMerchant,
+} from "../storage/db.ts";
 
 describe("Ingestion Pipeline", () => {
   let db: ReturnType<typeof createDatabase>;
@@ -212,5 +217,139 @@ describe("Ingestion Pipeline", () => {
 
     await new Promise((r) => setTimeout(r, 50));
     assertEquals(registryCalled, false);
+  });
+
+  it("should create an ingestion job and return jobId in result", async () => {
+    db = createDatabase(":memory:");
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Job Test Shop",
+      discover: () => Promise.resolve(["https://shop.example.com/product/1"]),
+      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product"`),
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", price: 5 },
+        }),
+    });
+    assertExists(result.jobId);
+    assertEquals(typeof result.jobId, "number");
+  });
+
+  it("should set job status to completed after successful ingest", async () => {
+    db = createDatabase(":memory:");
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Completed Shop",
+      discover: () => Promise.resolve(["https://shop.example.com/product/1"]),
+      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product"`),
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", price: 5 },
+        }),
+    });
+    const job = getIngestionJob(db, result.jobId);
+    assertEquals(job?.status, "completed");
+    assertEquals(job?.productsExtracted, 1);
+    assertEquals(job?.productsFailed, 0);
+  });
+
+  it("should set job status to failed when all extractions fail", async () => {
+    db = createDatabase(":memory:");
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Failed Shop",
+      discover: () => Promise.resolve(["https://shop.example.com/product/1"]),
+      extractSnapshot: () => Promise.reject(new Error("boom")),
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget" },
+        }),
+    });
+    const job = getIngestionJob(db, result.jobId);
+    assertEquals(job?.status, "failed");
+  });
+
+  it("should persist extraction errors in database", async () => {
+    db = createDatabase(":memory:");
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Error Shop",
+      discover: () =>
+        Promise.resolve([
+          "https://shop.example.com/product/1",
+          "https://shop.example.com/product/2",
+        ]),
+      extractSnapshot: (url) => {
+        if (url.includes("product/1")) {
+          return Promise.reject(new Error("timeout"));
+        }
+        return Promise.resolve(`@e1 [heading] "Product"`);
+      },
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget" },
+        }),
+    });
+    const job = getIngestionJob(db, result.jobId);
+    assertEquals(job?.errors.length, 1);
+    assertEquals(job?.errors[0].errorMessage, "timeout");
+    assertEquals(
+      job?.errors[0].sourceUrl,
+      "https://shop.example.com/product/1",
+    );
+  });
+
+  it("should store product categories during ingestion", async () => {
+    db = createDatabase(":memory:");
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Category Shop",
+      discover: () => Promise.resolve(["https://shop.example.com/product/1"]),
+      extractSnapshot: () => Promise.resolve(`@e1 [heading] "Product"`),
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget", category: "Electronics", type: "Gadget" },
+        }),
+    });
+    const cats = getCategoriesByMerchant(db, result.merchantId);
+    assertEquals(cats.includes("Electronics"), true);
+    assertEquals(cats.includes("Gadget"), true);
+  });
+
+  it("should track accurate job counters", async () => {
+    db = createDatabase(":memory:");
+    let callCount = 0;
+    const result = await ingestMerchant(db, {
+      url: "https://shop.example.com",
+      name: "Counter Shop",
+      discover: () =>
+        Promise.resolve([
+          "https://shop.example.com/product/1",
+          "https://shop.example.com/product/2",
+          "https://shop.example.com/product/3",
+        ]),
+      extractSnapshot: () => {
+        callCount++;
+        if (callCount === 2) {
+          return Promise.reject(new Error("fail"));
+        }
+        return Promise.resolve(`@e1 [heading] "Product"`);
+      },
+      processWithLLM: () =>
+        Promise.resolve({
+          schema: { type: "product" },
+          data: { name: "Widget" },
+        }),
+    });
+    const job = getIngestionJob(db, result.jobId);
+    assertEquals(job?.urlsDiscovered, 3);
+    assertEquals(job?.productsExtracted, 2);
+    assertEquals(job?.productsFailed, 1);
+    assertEquals(job?.status, "completed");
   });
 });

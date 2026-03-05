@@ -128,6 +128,7 @@ describe("HTTP Server", () => {
     const handler = createHttpHandler(db, "test-api-key", {
       ingestFn: () =>
         Promise.resolve({
+          jobId: 1,
           merchantId: 1,
           productsIngested: 3,
           urlsDiscovered: 10,
@@ -159,6 +160,7 @@ describe("HTTP Server", () => {
     const handler = createHttpHandler(db, "test-api-key", {
       ingestFn: () =>
         Promise.resolve({
+          jobId: 1,
           merchantId: 1,
           productsIngested: 0,
           urlsDiscovered: 0,
@@ -201,6 +203,19 @@ describe("HTTP Server", () => {
     const spec = await response.json();
     assert(spec.info.description.includes("Aeola"));
     assert(spec.info.description.includes("Agent Engine Optimization"));
+  });
+
+  it("should include ingestion job and category schemas in OpenAPI spec", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/openapi.json"),
+    );
+    const spec = await response.json();
+    assert(spec.components.schemas.IngestionJob);
+    assert(spec.components.schemas.Category);
+    assert(spec.paths["/api/jobs/{id}"]);
+    assert(spec.paths["/api/categories"]);
   });
 
   it("should return 204 for OPTIONS preflight with CORS headers", async () => {

@@ -3,7 +3,14 @@ import { assert, assertEquals, assertExists } from "@std/assert";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "./server.ts";
-import { addMerchant, addProduct, createDatabase } from "../storage/db.ts";
+import {
+  addMerchant,
+  addProduct,
+  addProductCategories,
+  createDatabase,
+  createIngestionJob,
+  updateJobStatus,
+} from "../storage/db.ts";
 
 async function createTestClient(
   db: ReturnType<typeof createDatabase>,
@@ -139,6 +146,7 @@ describe("MCP Server", () => {
       ingestFn: (_db, url, name) => {
         calledWith = { url, name };
         return Promise.resolve({
+          jobId: 1,
           merchantId: 1,
           productsIngested: 0,
           urlsDiscovered: 0,
@@ -204,6 +212,142 @@ describe("MCP Server", () => {
       (result.content as Array<{ type: string; text: string }>)[0].text,
     );
     assertEquals(body.error, "Product not found");
+    await client.close();
+  });
+
+  it("should list get_ingestion_status in tools", async () => {
+    db = createDatabase(":memory:");
+    const client = await createTestClient(db);
+    const { tools } = await client.listTools();
+    const toolNames = tools.map((t) => t.name);
+    assertEquals(toolNames.includes("get_ingestion_status"), true);
+    await client.close();
+  });
+
+  it("should return job data for existing job", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
+    const jobId = createIngestionJob(db, mid);
+    updateJobStatus(db, jobId, "completed", { productsExtracted: 3 });
+    const client = await createTestClient(db);
+    const result = await client.callTool({
+      name: "get_ingestion_status",
+      arguments: { jobId },
+    });
+    const job = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
+    assertEquals(job.status, "completed");
+    assertEquals(job.productsExtracted, 3);
+    await client.close();
+  });
+
+  it("should return error for non-existent job", async () => {
+    db = createDatabase(":memory:");
+    const client = await createTestClient(db);
+    const result = await client.callTool({
+      name: "get_ingestion_status",
+      arguments: { jobId: 999 },
+    });
+    const body = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
+    assertEquals(body.error, "Job not found");
+    await client.close();
+  });
+
+  it("should filter search_products by category", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
+    const p1 = addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://example.com/p/1",
+      data: { name: "Blue Widget" },
+      schema: { type: "product" },
+    });
+    const p2 = addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://example.com/p/2",
+      data: { name: "Blue Shirt" },
+      schema: { type: "product" },
+    });
+    addProductCategories(db, p1, ["electronics"]);
+    addProductCategories(db, p2, ["clothing"]);
+    const client = await createTestClient(db);
+    const result = await client.callTool({
+      name: "search_products",
+      arguments: { query: "Blue", category: "electronics" },
+    });
+    const products = JSON.parse(
+      (result.content as Array<{ type: string; text: string }>)[0].text,
+    );
+    assertEquals(products.length, 1);
+    assertEquals(products[0].data.name, "Blue Widget");
+    await client.close();
+  });
+
+  it("should list resources including catalog://merchants", async () => {
+    db = createDatabase(":memory:");
+    const client = await createTestClient(db);
+    const { resources } = await client.listResources();
+    const uris = resources.map((r) => r.uri);
+    assert(uris.includes("catalog://merchants"));
+    await client.close();
+  });
+
+  it("should read catalog://merchants resource with merchant data", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://example.com/p/1",
+      data: { name: "Widget" },
+      schema: {},
+    });
+    const client = await createTestClient(db);
+    const { contents } = await client.readResource({
+      uri: "catalog://merchants",
+    });
+    const data = JSON.parse(
+      (contents[0] as { text: string }).text,
+    );
+    assertEquals(data.length, 1);
+    assertEquals(data[0].name, "Test");
+    assertEquals(data[0].productCount, 1);
+    await client.close();
+  });
+
+  it("should read catalog://merchants/{id} resource with detail", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, {
+      url: "https://example.com",
+      name: "Test",
+    });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://example.com/p/1",
+      data: { name: "Widget" },
+      schema: {},
+    });
+    const client = await createTestClient(db);
+    const { contents } = await client.readResource({
+      uri: `catalog://merchants/${mid}`,
+    });
+    const data = JSON.parse(
+      (contents[0] as { text: string }).text,
+    );
+    assertEquals(data.name, "Test");
+    assert(Array.isArray(data.products));
+    assert(Array.isArray(data.categories));
     await client.close();
   });
 });

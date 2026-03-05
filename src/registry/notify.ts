@@ -7,16 +7,26 @@ export interface RegistryPayload {
   categories: string[];
 }
 
+export function extractCategoriesFromProduct(
+  data: Record<string, unknown>,
+): string[] {
+  const categoryKeys = /^(categor(y|ies)|type|department|collection)$/i;
+  const results: string[] = [];
+  for (const [key, value] of Object.entries(data)) {
+    if (categoryKeys.test(key) && typeof value === "string" && value) {
+      results.push(value);
+    }
+  }
+  return results;
+}
+
 export function extractCategories(
   products: Record<string, unknown>[],
 ): string[] {
-  const categoryKeys = /^(categor(y|ies)|type|department)$/i;
   const seen = new Set<string>();
   for (const product of products) {
-    for (const [key, value] of Object.entries(product)) {
-      if (categoryKeys.test(key) && typeof value === "string" && value) {
-        seen.add(value);
-      }
+    for (const cat of extractCategoriesFromProduct(product)) {
+      seen.add(cat);
     }
   }
   return [...seen];

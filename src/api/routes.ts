@@ -1,8 +1,13 @@
 import type { Database } from "@db/sqlite";
 import {
+  getCategoriesByMerchant,
+  getIngestionJob,
+  getJobsByMerchant,
   getMerchant,
   getProduct,
+  getProductsByCategory,
   getProductsByMerchant,
+  listCategories,
   listMerchants,
   searchProducts,
 } from "../storage/db.ts";
@@ -29,6 +34,34 @@ export function createApiHandler(db: Database) {
       const product = getProduct(db, parseInt(productMatch[1]));
       if (!product) return json({ error: "Product not found" }, 404);
       return json(product);
+    }
+
+    // GET /api/merchants/:id/jobs
+    const merchantJobsMatch = path.match(
+      /^\/api\/merchants\/(\d+)\/jobs$/,
+    );
+    if (merchantJobsMatch) {
+      const limit = parseInt(url.searchParams.get("limit") ?? "20");
+      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const jobs = getJobsByMerchant(
+        db,
+        parseInt(merchantJobsMatch[1]),
+        limit,
+        offset,
+      );
+      return json(jobs);
+    }
+
+    // GET /api/merchants/:id/categories
+    const merchantCategoriesMatch = path.match(
+      /^\/api\/merchants\/(\d+)\/categories$/,
+    );
+    if (merchantCategoriesMatch) {
+      const cats = getCategoriesByMerchant(
+        db,
+        parseInt(merchantCategoriesMatch[1]),
+      );
+      return json(cats);
     }
 
     // GET /api/merchants/:id/products?limit=20&offset=0
@@ -58,6 +91,31 @@ export function createApiHandler(db: Database) {
     // GET /api/merchants
     if (path === "/api/merchants") {
       return json(listMerchants(db));
+    }
+
+    // GET /api/jobs/:id
+    const jobMatch = path.match(/^\/api\/jobs\/(\d+)$/);
+    if (jobMatch) {
+      const job = getIngestionJob(db, parseInt(jobMatch[1]));
+      if (!job) return json({ error: "Job not found" }, 404);
+      return json(job);
+    }
+
+    // GET /api/categories
+    if (path === "/api/categories") {
+      return json(listCategories(db));
+    }
+
+    // GET /api/categories/:name/products
+    const categoryProductsMatch = path.match(
+      /^\/api\/categories\/([^/]+)\/products$/,
+    );
+    if (categoryProductsMatch) {
+      const categoryName = decodeURIComponent(categoryProductsMatch[1]);
+      const limit = parseInt(url.searchParams.get("limit") ?? "20");
+      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const products = getProductsByCategory(db, categoryName, limit, offset);
+      return json(products);
     }
 
     return null;

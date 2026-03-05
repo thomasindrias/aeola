@@ -54,10 +54,63 @@ export function getOpenApiSpec() {
         IngestResult: {
           type: "object",
           properties: {
+            jobId: { type: "integer" },
             merchantId: { type: "integer" },
             productsIngested: { type: "integer" },
             urlsDiscovered: { type: "integer" },
             errors: { type: "array", items: { type: "string" } },
+          },
+        },
+        IngestionJob: {
+          type: "object",
+          properties: {
+            id: { type: "integer" },
+            merchantId: { type: "integer" },
+            status: {
+              type: "string",
+              enum: ["pending", "in_progress", "completed", "failed"],
+            },
+            startedAt: { type: "string", format: "date-time", nullable: true },
+            completedAt: {
+              type: "string",
+              format: "date-time",
+              nullable: true,
+            },
+            urlsDiscovered: { type: "integer" },
+            productsExtracted: { type: "integer" },
+            productsFailed: { type: "integer" },
+            createdAt: { type: "string", format: "date-time" },
+          },
+        },
+        ExtractionError: {
+          type: "object",
+          properties: {
+            id: { type: "integer" },
+            jobId: { type: "integer" },
+            sourceUrl: { type: "string" },
+            errorMessage: { type: "string" },
+            createdAt: { type: "string", format: "date-time" },
+          },
+        },
+        IngestionJobDetail: {
+          allOf: [
+            { $ref: "#/components/schemas/IngestionJob" },
+            {
+              type: "object",
+              properties: {
+                errors: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/ExtractionError" },
+                },
+              },
+            },
+          ],
+        },
+        Category: {
+          type: "object",
+          properties: {
+            category: { type: "string" },
+            productCount: { type: "integer" },
           },
         },
         Error: {
@@ -251,6 +304,146 @@ export function getOpenApiSpec() {
               },
             },
             "404": { description: "Product not found" },
+          },
+        },
+      },
+      "/api/merchants/{id}/jobs": {
+        get: {
+          summary: "List ingestion jobs for a merchant",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+            {
+              name: "limit",
+              in: "query",
+              schema: { type: "integer", default: 20 },
+            },
+            {
+              name: "offset",
+              in: "query",
+              schema: { type: "integer", default: 0 },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Array of ingestion jobs",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { $ref: "#/components/schemas/IngestionJob" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/jobs/{id}": {
+        get: {
+          summary: "Get ingestion job detail",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Job detail with errors",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/IngestionJobDetail" },
+                },
+              },
+            },
+            "404": { description: "Job not found" },
+          },
+        },
+      },
+      "/api/categories": {
+        get: {
+          summary: "List all categories with product counts",
+          responses: {
+            "200": {
+              description: "Array of categories",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { $ref: "#/components/schemas/Category" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/categories/{name}/products": {
+        get: {
+          summary: "Get products by category",
+          parameters: [
+            {
+              name: "name",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+            {
+              name: "limit",
+              in: "query",
+              schema: { type: "integer", default: 20 },
+            },
+            {
+              name: "offset",
+              in: "query",
+              schema: { type: "integer", default: 0 },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Array of products in category",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { $ref: "#/components/schemas/Product" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/merchants/{id}/categories": {
+        get: {
+          summary: "Get categories for a merchant",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Array of category names",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                },
+              },
+            },
           },
         },
       },

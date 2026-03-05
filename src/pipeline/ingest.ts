@@ -1,7 +1,18 @@
 import type { Database } from "@db/sqlite";
-import { addProduct, getOrCreateMerchant } from "../storage/db.ts";
+import {
+  addExtractionError,
+  addProduct,
+  addProductCategories,
+  createIngestionJob,
+  getOrCreateMerchant,
+  updateJobStatus,
+} from "../storage/db.ts";
 import type { Logger } from "../utils/logger.ts";
-import { extractCategories, notifyRegistry } from "../registry/notify.ts";
+import {
+  extractCategories,
+  extractCategoriesFromProduct,
+  notifyRegistry,
+} from "../registry/notify.ts";
 
 export interface IngestOptions {
   url: string;
@@ -24,6 +35,7 @@ export interface IngestOptions {
 }
 
 export interface IngestResult {
+  jobId: number;
   merchantId: number;
   productsIngested: number;
   urlsDiscovered: number;
@@ -67,12 +79,20 @@ export async function ingestMerchant(
   } = options;
 
   const merchantId = getOrCreateMerchant(db, { url, name });
+  const jobId = createIngestionJob(db, merchantId);
+  updateJobStatus(db, jobId, "in_progress", {
+    startedAt: new Date().toISOString(),
+  });
 
   // Phase 1: Discover product URLs
   const productUrls = await discover(url);
   log?.info("discovery complete", { url, urlsDiscovered: productUrls.length });
+  updateJobStatus(db, jobId, "in_progress", {
+    urlsDiscovered: productUrls.length,
+  });
 
   let productsIngested = 0;
+  let productsFailed = 0;
   const errors: string[] = [];
   const productDataList: Record<string, unknown>[] = [];
 
@@ -85,14 +105,34 @@ export async function ingestMerchant(
         snapshotText,
         productUrl,
       );
-      addProduct(db, { merchantId, sourceUrl: productUrl, data, schema });
+      const productId = addProduct(db, {
+        merchantId,
+        sourceUrl: productUrl,
+        data,
+        schema,
+      });
+      const categories = extractCategoriesFromProduct(data);
+      if (categories.length > 0) {
+        addProductCategories(db, productId, categories);
+      }
       productDataList.push(data);
       productsIngested++;
     } catch (e) {
       const msg = (e as Error).message;
       errors.push(`Failed ${productUrl}: ${msg}`);
+      addExtractionError(db, jobId, productUrl, msg);
+      productsFailed++;
       log?.warn("extraction failed", { productUrl, error: msg });
     }
+  });
+
+  const finalStatus = productsIngested === 0 && errors.length > 0
+    ? "failed"
+    : "completed";
+  updateJobStatus(db, jobId, finalStatus, {
+    completedAt: new Date().toISOString(),
+    productsExtracted: productsIngested,
+    productsFailed,
   });
 
   log?.info("ingest complete", {
@@ -113,6 +153,7 @@ export async function ingestMerchant(
   }
 
   return {
+    jobId,
     merchantId,
     productsIngested,
     urlsDiscovered: productUrls.length,

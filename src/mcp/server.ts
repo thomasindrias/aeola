@@ -1,9 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Database } from "@db/sqlite";
 import {
+  getCategoriesByMerchant,
+  getIngestionJob,
+  getMerchant,
   getProduct,
+  getProductCountByMerchant,
   getProductsByMerchant,
+  listMerchants,
   searchProducts,
 } from "../storage/db.ts";
 import { buildIngestOptions } from "../pipeline/wire.ts";
@@ -58,10 +64,17 @@ export function createMcpServer(
         "Search Aeola's product catalog across all merchants by keyword. Use this to find, compare, and recommend products from agent-readable catalogs.",
       inputSchema: z.object({
         query: z.string().describe("Search keyword"),
+        category: z.string().optional().describe("Optional category filter"),
       }),
     },
-    ({ query }) => {
-      const products = searchProducts(db, query);
+    ({ query, category }) => {
+      const products = searchProducts(
+        db,
+        query,
+        100,
+        0,
+        category,
+      );
       return {
         content: [{ type: "text" as const, text: JSON.stringify(products) }],
       };
@@ -129,6 +142,98 @@ export function createMcpServer(
       const result = await ingestFn(db, url, name);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "get_ingestion_status",
+    {
+      description:
+        "Get the status of an Aeola ingestion job, including progress " +
+        "and any extraction errors encountered during crawling.",
+      inputSchema: z.object({
+        jobId: z.number().describe(
+          "The ingestion job ID returned by ingest_merchant",
+        ),
+      }),
+    },
+    ({ jobId }) => {
+      const job = getIngestionJob(db, jobId);
+      if (!job) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({ error: "Job not found" }),
+          }],
+        };
+      }
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(job) }],
+      };
+    },
+  );
+
+  // MCP Resources — Catalog Discovery
+  server.registerResource(
+    "merchant_catalog",
+    "catalog://merchants",
+    {
+      title: "Merchant Catalog",
+      description:
+        "All merchants in Aeola's catalog with product counts and categories",
+      mimeType: "application/json",
+    },
+    (uri) => {
+      const merchants = listMerchants(db);
+      const enriched = merchants.map((m) => ({
+        ...m,
+        productCount: getProductCountByMerchant(db, m.id),
+        categories: getCategoriesByMerchant(db, m.id),
+      }));
+      return {
+        contents: [{
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(enriched),
+        }],
+      };
+    },
+  );
+
+  const merchantTemplate = new ResourceTemplate(
+    "catalog://merchants/{id}",
+    {
+      list: () => ({
+        resources: listMerchants(db).map((m) => ({
+          uri: `catalog://merchants/${m.id}`,
+          name: m.name,
+        })),
+      }),
+    },
+  );
+
+  server.registerResource(
+    "merchant_detail",
+    merchantTemplate,
+    {
+      title: "Merchant Detail",
+      description:
+        "Merchant detail with products and categories from Aeola's catalog",
+      mimeType: "application/json",
+    },
+    (uri, { id }) => {
+      const merchantId = parseInt(id as string);
+      const merchant = getMerchant(db, merchantId);
+      if (!merchant) throw new Error("Merchant not found");
+      const products = getProductsByMerchant(db, merchantId);
+      const categories = getCategoriesByMerchant(db, merchantId);
+      return {
+        contents: [{
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify({ ...merchant, products, categories }),
+        }],
       };
     },
   );

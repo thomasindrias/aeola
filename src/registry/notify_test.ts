@@ -1,6 +1,10 @@
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
-import { extractCategories, notifyRegistry } from "./notify.ts";
+import {
+  extractCategories,
+  extractCategoriesFromProduct,
+  notifyRegistry,
+} from "./notify.ts";
 
 describe("notifyRegistry", () => {
   it("should POST correct JSON payload to registry URL", async () => {
@@ -66,6 +70,31 @@ describe("notifyRegistry", () => {
       categories: [],
     }, { fetchFn: mockFetch });
     assertEquals(fetchCalled, false);
+  });
+});
+
+describe("extractCategoriesFromProduct", () => {
+  it("should extract category values from a single product", () => {
+    const cats = extractCategoriesFromProduct({
+      category: "Shoes",
+      type: "Running",
+      name: "Nike Air",
+    });
+    assertEquals(cats.includes("Shoes"), true);
+    assertEquals(cats.includes("Running"), true);
+    assertEquals(cats.length, 2);
+  });
+
+  it("should return empty array for product without category fields", () => {
+    assertEquals(
+      extractCategoriesFromProduct({ name: "Widget", price: 10 }).length,
+      0,
+    );
+  });
+
+  it("should match collection key", () => {
+    const cats = extractCategoriesFromProduct({ collection: "Summer 2026" });
+    assertEquals(cats, ["Summer 2026"]);
   });
 });
 

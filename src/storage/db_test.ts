@@ -1,15 +1,25 @@
 import { afterEach, describe, it } from "@std/testing/bdd";
 import { assertEquals, assertExists, assertThrows } from "@std/assert";
 import {
+  addExtractionError,
   addMerchant,
   addProduct,
+  addProductCategories,
   createDatabase,
+  createIngestionJob,
+  getCategoriesByMerchant,
+  getIngestionJob,
+  getJobsByMerchant,
   getMerchant,
   getOrCreateMerchant,
   getProduct,
+  getProductCountByMerchant,
+  getProductsByCategory,
   getProductsByMerchant,
+  listCategories,
   listMerchants,
   searchProducts,
+  updateJobStatus,
 } from "./db.ts";
 
 describe("Storage Layer", () => {
@@ -178,6 +188,218 @@ describe("Storage Layer", () => {
       addMerchant(db, { url: "https://shop2.com", name: "Shop 2" });
       const merchants = listMerchants(db);
       assertEquals(merchants.length, 2);
+    });
+  });
+
+  describe("ingestion_jobs", () => {
+    it("should create a job with pending status", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const jobId = createIngestionJob(db, mid);
+      const job = getIngestionJob(db, jobId);
+      assertExists(job);
+      assertEquals(job.status, "pending");
+      assertEquals(job.merchantId, mid);
+      assertEquals(job.urlsDiscovered, 0);
+      assertEquals(job.productsExtracted, 0);
+      assertEquals(job.productsFailed, 0);
+    });
+
+    it("should update job status from pending to in_progress", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const jobId = createIngestionJob(db, mid);
+      updateJobStatus(db, jobId, "in_progress", {
+        startedAt: "2026-01-01T00:00:00",
+      });
+      const job = getIngestionJob(db, jobId);
+      assertEquals(job?.status, "in_progress");
+      assertEquals(job?.startedAt, "2026-01-01T00:00:00");
+    });
+
+    it("should update job to completed with counters", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const jobId = createIngestionJob(db, mid);
+      updateJobStatus(db, jobId, "completed", {
+        completedAt: "2026-01-01T00:01:00",
+        urlsDiscovered: 10,
+        productsExtracted: 8,
+        productsFailed: 2,
+      });
+      const job = getIngestionJob(db, jobId);
+      assertEquals(job?.status, "completed");
+      assertEquals(job?.urlsDiscovered, 10);
+      assertEquals(job?.productsExtracted, 8);
+      assertEquals(job?.productsFailed, 2);
+    });
+
+    it("should update job to failed status", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const jobId = createIngestionJob(db, mid);
+      updateJobStatus(db, jobId, "failed");
+      const job = getIngestionJob(db, jobId);
+      assertEquals(job?.status, "failed");
+    });
+
+    it("should add extraction errors and retrieve with job detail", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const jobId = createIngestionJob(db, mid);
+      addExtractionError(db, jobId, "https://shop.com/p/1", "timeout");
+      addExtractionError(db, jobId, "https://shop.com/p/2", "parse error");
+      const job = getIngestionJob(db, jobId);
+      assertExists(job);
+      assertEquals(job.errors.length, 2);
+      assertEquals(job.errors[0].sourceUrl, "https://shop.com/p/1");
+      assertEquals(job.errors[0].errorMessage, "timeout");
+      assertEquals(job.errors[1].sourceUrl, "https://shop.com/p/2");
+    });
+
+    it("should list jobs by merchant with pagination", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      createIngestionJob(db, mid);
+      createIngestionJob(db, mid);
+      createIngestionJob(db, mid);
+      const page1 = getJobsByMerchant(db, mid, 2, 0);
+      assertEquals(page1.length, 2);
+      const page2 = getJobsByMerchant(db, mid, 2, 2);
+      assertEquals(page2.length, 1);
+    });
+  });
+
+  describe("product_categories", () => {
+    it("should add categories for a product", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const pid = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "Widget" },
+        schema: {},
+      });
+      addProductCategories(db, pid, ["electronics", "gadgets"]);
+      const cats = listCategories(db);
+      assertEquals(cats.length, 2);
+    });
+
+    it("should ignore duplicate categories (UNIQUE constraint)", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const pid = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "Widget" },
+        schema: {},
+      });
+      addProductCategories(db, pid, ["electronics"]);
+      addProductCategories(db, pid, ["electronics"]);
+      const cats = listCategories(db);
+      assertEquals(cats.length, 1);
+    });
+
+    it("should list all categories with product counts", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const p1 = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "A" },
+        schema: {},
+      });
+      const p2 = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/2",
+        data: { name: "B" },
+        schema: {},
+      });
+      addProductCategories(db, p1, ["electronics"]);
+      addProductCategories(db, p2, ["electronics", "clothing"]);
+      const cats = listCategories(db);
+      assertEquals(cats[0].category, "electronics");
+      assertEquals(cats[0].productCount, 2);
+      assertEquals(cats[1].category, "clothing");
+      assertEquals(cats[1].productCount, 1);
+    });
+
+    it("should get products by category", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const p1 = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "A" },
+        schema: {},
+      });
+      const p2 = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/2",
+        data: { name: "B" },
+        schema: {},
+      });
+      addProductCategories(db, p1, ["electronics"]);
+      addProductCategories(db, p2, ["clothing"]);
+      const products = getProductsByCategory(db, "electronics");
+      assertEquals(products.length, 1);
+      assertEquals(products[0].data.name, "A");
+    });
+
+    it("should get categories for a merchant", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const pid = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "A" },
+        schema: {},
+      });
+      addProductCategories(db, pid, ["electronics", "gadgets"]);
+      const cats = getCategoriesByMerchant(db, mid);
+      assertEquals(cats.length, 2);
+      assertEquals(cats.includes("electronics"), true);
+      assertEquals(cats.includes("gadgets"), true);
+    });
+
+    it("should get product count by merchant efficiently", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "A" },
+        schema: {},
+      });
+      addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/2",
+        data: { name: "B" },
+        schema: {},
+      });
+      assertEquals(getProductCountByMerchant(db, mid), 2);
+    });
+
+    it("should filter search results by category", () => {
+      db = createDatabase(":memory:");
+      const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+      const p1 = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/1",
+        data: { name: "Blue Widget" },
+        schema: {},
+      });
+      const p2 = addProduct(db, {
+        merchantId: mid,
+        sourceUrl: "https://shop.com/p/2",
+        data: { name: "Blue Shirt" },
+        schema: {},
+      });
+      addProductCategories(db, p1, ["electronics"]);
+      addProductCategories(db, p2, ["clothing"]);
+      const results = searchProducts(db, "Blue", 100, 0, "electronics");
+      assertEquals(results.length, 1);
+      assertEquals(results[0].data.name, "Blue Widget");
     });
   });
 });
