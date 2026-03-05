@@ -733,6 +733,57 @@
         </div>
       </div>
 
+      <section class="pipeline" id="pipeline">
+        <h2 class="pipeline-title">How It Works</h2>
+        <p class="pipeline-subtitle">From merchant URL to agent-ready data in five steps</p>
+        <div class="pipeline-track" role="list">
+          <div class="pipeline-node" data-step="0" role="listitem">
+            <div class="node-icon">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <h3 class="node-label">Discovery</h3>
+            <span class="node-tech">Playwright</span>
+            <p class="node-desc">Crawl & prioritize product URLs with smart dedup</p>
+          </div>
+          <div class="pipeline-connector" data-step="0" aria-hidden="true"><div class="connector-line"></div><div class="connector-dot"></div></div>
+          <div class="pipeline-node" data-step="1" role="listitem">
+            <div class="node-icon">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h3 class="node-label">Extraction</h3>
+            <span class="node-tech">Agent Browser</span>
+            <p class="node-desc">Compact accessibility tree snapshots</p>
+          </div>
+          <div class="pipeline-connector" data-step="1" aria-hidden="true"><div class="connector-line"></div><div class="connector-dot"></div></div>
+          <div class="pipeline-node" data-step="2" role="listitem">
+            <div class="node-icon">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+            </div>
+            <h3 class="node-label">Brain</h3>
+            <span class="node-tech">OpenAI</span>
+            <p class="node-desc">Dynamic schema inference via LLM</p>
+          </div>
+          <div class="pipeline-connector" data-step="2" aria-hidden="true"><div class="connector-line"></div><div class="connector-dot"></div></div>
+          <div class="pipeline-node" data-step="3" role="listitem">
+            <div class="node-icon">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <h3 class="node-label">Storage</h3>
+            <span class="node-tech">SQLite</span>
+            <p class="node-desc">JSON storage with upsert dedup</p>
+          </div>
+          <div class="pipeline-connector" data-step="3" aria-hidden="true"><div class="connector-line"></div><div class="connector-dot"></div></div>
+          <div class="pipeline-node" data-step="4" role="listitem">
+            <div class="node-icon">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <h3 class="node-label">Delivery</h3>
+            <span class="node-tech">MCP + REST</span>
+            <p class="node-desc">Agents discover & consume your data</p>
+          </div>
+        </div>
+      </section>
+
       <div class="code-block">
         <div class="code-header">
           <span class="code-dot"></span>
