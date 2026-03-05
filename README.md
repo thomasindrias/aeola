@@ -3,6 +3,10 @@
 [![Self-Host](https://img.shields.io/badge/Self--Host-Free-brightgreen)](#run-locally)
 [![Managed Cloud](https://img.shields.io/badge/Aeola_Cloud-%2499%2Fmo-blue)](#)
 
+<p align="center">
+<img width="720" height="470" alt="Skärmavbild 2026-03-05 kl  08 22 22" src="https://github.com/user-attachments/assets/5f2c0a7e-6da0-4142-bf5d-d32e4fb34d7b" />
+</p>
+
 **Agent Engine Optimization (AEO) infrastructure** — makes e-commerce product
 data discoverable and consumable by AI agents via
 [MCP](https://modelcontextprotocol.io/).
