@@ -10,6 +10,7 @@ import { createRateLimiter } from "./middleware/ratelimit.ts";
 import { addCorsHeaders, handlePreflight } from "./middleware/cors.ts";
 import { createApiHandler } from "./api/routes.ts";
 import { getOpenApiSpec } from "./api/openapi.ts";
+import { getUcpProfile } from "./ucp/profile.ts";
 
 function constantTimeAuthCheck(
   authHeader: string | null,
@@ -100,6 +101,15 @@ export function createHttpHandler(
     if (url.pathname === "/openapi.json") {
       return respond(
         new Response(JSON.stringify(getOpenApiSpec()), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    }
+
+    if (url.pathname === "/.well-known/ucp") {
+      return respond(
+        new Response(JSON.stringify(getUcpProfile()), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         }),

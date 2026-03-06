@@ -105,6 +105,30 @@ How Aeola uses MCP:
   catalog
 - MCP is the delivery mechanism; Aeola is the data pipeline
 
+## UCP (Universal Commerce Protocol)
+
+Google's open standard for agentic commerce. Enables AI agents (Google Search AI
+Mode, Gemini) to discover and transact with merchants via modular capabilities:
+Checkout, Identity Linking, Order, Payment Token Exchange, Extensions.
+Transport-agnostic — supports REST, MCP, A2A, and embedded protocols.
+
+Merchants advertise capabilities at `/.well-known/ucp` using a structured
+profile. Capabilities use reverse-domain notation (e.g.,
+`dev.ucp.shopping.checkout`) and are versioned in YYYY-MM-DD format.
+
+### Aeola's Relationship to UCP
+
+Aeola is upstream of UCP's checkout flow. UCP agents need structured product
+catalogs to populate checkout line items — Aeola provides that catalog. Aeola
+exposes a UCP discovery profile at `/.well-known/ucp` declaring a custom
+`io.aeola.product_catalog` capability, and serves product data in Google
+Merchant-compatible format via `/api/ucp/` endpoints.
+
+Aeola does not implement checkout, payment, or identity capabilities — it is the
+structured data source that sits upstream of transaction flows. The integration
+path: Aeola crawls and extracts product data → exports in Google Merchant format
+→ UCP checkout agents reference products by ID in their line items.
+
 ## Glossary
 
 | Term | Definition                                                                |
@@ -116,10 +140,13 @@ How Aeola uses MCP:
 | GEO  | Generative Engine Optimization — visibility in AI summaries               |
 | ACP  | Agentic Commerce Protocol — programmatic commerce standard                |
 | MCP  | Model Context Protocol — LLM-to-external-data standard                    |
+| UCP  | Universal Commerce Protocol — Google's agentic commerce standard          |
 
 ## References
 
 - https://agenticcommerce.dev — ACP specification (Stripe/OpenAI)
 - https://developers.openai.com/commerce — OpenAI Agentic Commerce docs
 - https://modelcontextprotocol.io — MCP specification
+- https://developers.google.com/merchant/ucp — UCP specification (Google)
+- https://github.com/universal-commerce-protocol/ucp — UCP open-source spec
 - https://searchengineland.com/aao-assistive-agent-optimization-469919

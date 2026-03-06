@@ -11,6 +11,7 @@ import {
   listMerchants,
   searchProducts,
 } from "../storage/db.ts";
+import { mapProductToGoogleMerchant } from "../ucp/mapper.ts";
 
 export function createApiHandler(db: Database) {
   return (request: Request): Response | null => {
@@ -116,6 +117,30 @@ export function createApiHandler(db: Database) {
       const offset = parseInt(url.searchParams.get("offset") ?? "0");
       const products = getProductsByCategory(db, categoryName, limit, offset);
       return json(products);
+    }
+
+    // GET /api/ucp/merchants/:id/products — Google Merchant format export
+    const ucpMerchantProductsMatch = path.match(
+      /^\/api\/ucp\/merchants\/(\d+)\/products$/,
+    );
+    if (ucpMerchantProductsMatch) {
+      const limit = parseInt(url.searchParams.get("limit") ?? "20");
+      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const products = getProductsByMerchant(
+        db,
+        parseInt(ucpMerchantProductsMatch[1]),
+        limit,
+        offset,
+      );
+      return json(products.map(mapProductToGoogleMerchant));
+    }
+
+    // GET /api/ucp/products/:id — single product in Google Merchant format
+    const ucpProductMatch = path.match(/^\/api\/ucp\/products\/(\d+)$/);
+    if (ucpProductMatch) {
+      const product = getProduct(db, parseInt(ucpProductMatch[1]));
+      if (!product) return json({ error: "Product not found" }, 404);
+      return json(mapProductToGoogleMerchant(product));
     }
 
     return null;

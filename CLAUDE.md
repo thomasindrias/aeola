@@ -31,6 +31,10 @@ tools.
 - **MCP (Model Context Protocol)** — The open standard for how LLM applications
   connect to external data. Aeola exposes product data as MCP tools, making any
   merchant's catalog instantly accessible to any MCP-compatible AI agent.
+- **UCP (Universal Commerce Protocol)** — Google's open standard for agentic
+  commerce. Aeola exposes a UCP discovery profile at `/.well-known/ucp` and
+  serves product data in Google Merchant-compatible format, making merchants
+  plug-and-play for UCP agents. See `docs/domain.md` for full context.
 
 ## Architecture
 
@@ -88,7 +92,7 @@ Five-component AI-first pipeline:
 
 ```
 src/
-├── main.ts              # HTTP server entry point (/health, /ingest, /mcp, /api/*, /openapi.json)
+├── main.ts              # HTTP server entry point (/health, /ingest, /mcp, /api/*, /openapi.json, /.well-known/ucp)
 ├── main_test.ts
 ├── api/
 │   ├── openapi.ts       # OpenAPI 3.1 spec
@@ -106,6 +110,9 @@ src/
 ├── spider/discovery.ts  # Playwright-based URL discovery with priority queue (with retry)
 ├── static/landing.html  # Landing page (shadcn-inspired, self-contained HTML)
 ├── storage/db.ts        # SQLite database layer (upsert, indices)
+├── ucp/
+│   ├── mapper.ts         # Product-to-Google Merchant format mapper
+│   └── profile.ts        # UCP discovery profile (/.well-known/ucp)
 └── utils/
     ├── logger.ts        # Structured JSON logger
     └── retry.ts         # Exponential backoff retry

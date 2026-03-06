@@ -113,6 +113,39 @@ export function getOpenApiSpec() {
             productCount: { type: "integer" },
           },
         },
+        GoogleMerchantProduct: {
+          type: "object",
+          required: ["offerId", "link", "productAttributes"],
+          properties: {
+            offerId: { type: "string" },
+            link: { type: "string", format: "uri" },
+            productAttributes: {
+              type: "object",
+              required: ["title", "description", "availability", "price"],
+              properties: {
+                title: { type: "string" },
+                description: { type: "string" },
+                imageLink: { type: "string", format: "uri" },
+                availability: {
+                  type: "string",
+                  enum: ["in_stock", "out_of_stock"],
+                },
+                price: {
+                  type: "object",
+                  required: ["value", "currency"],
+                  properties: {
+                    value: { type: "string" },
+                    currency: { type: "string" },
+                  },
+                },
+                additionalAttributes: {
+                  type: "object",
+                  additionalProperties: true,
+                },
+              },
+            },
+          },
+        },
         Error: {
           type: "object",
           properties: {
@@ -444,6 +477,106 @@ export function getOpenApiSpec() {
                 },
               },
             },
+          },
+        },
+      },
+      "/.well-known/ucp": {
+        get: {
+          summary: "UCP discovery profile",
+          description:
+            "Returns Aeola's UCP discovery profile declaring capabilities " +
+            "and service endpoints for AI agent discovery.",
+          security: [],
+          responses: {
+            "200": {
+              description: "UCP profile",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      ucp: {
+                        type: "object",
+                        properties: {
+                          version: { type: "string" },
+                          capabilities: { type: "array" },
+                          services: { type: "object" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/ucp/merchants/{id}/products": {
+        get: {
+          summary: "List products in Google Merchant format",
+          description:
+            "Returns products for a merchant in Google Merchant-compatible format " +
+            "for UCP agent consumption.",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+            {
+              name: "limit",
+              in: "query",
+              schema: { type: "integer", default: 20 },
+            },
+            {
+              name: "offset",
+              in: "query",
+              schema: { type: "integer", default: 0 },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Array of products in Google Merchant format",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/GoogleMerchantProduct",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/ucp/products/{id}": {
+        get: {
+          summary: "Get product in Google Merchant format",
+          description:
+            "Returns a single product in Google Merchant-compatible format.",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Product in Google Merchant format",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/GoogleMerchantProduct",
+                  },
+                },
+              },
+            },
+            "404": { description: "Product not found" },
           },
         },
       },

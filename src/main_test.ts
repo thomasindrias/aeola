@@ -218,6 +218,27 @@ describe("HTTP Server", () => {
     assert(spec.paths["/api/categories"]);
   });
 
+  it("should serve UCP profile at /.well-known/ucp without auth", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/.well-known/ucp"),
+    );
+    assertEquals(response.status, 200);
+    const body = await response.json();
+    assert(body.ucp);
+    assertEquals(body.ucp.capabilities[0].name, "io.aeola.product_catalog");
+  });
+
+  it("should include CORS headers on UCP profile", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/.well-known/ucp"),
+    );
+    assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
+  });
+
   it("should return 204 for OPTIONS preflight with CORS headers", async () => {
     db = createDatabase(":memory:");
     const handler = createHttpHandler(db, "test-api-key");
