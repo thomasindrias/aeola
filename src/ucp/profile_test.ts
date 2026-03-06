@@ -44,6 +44,25 @@ describe("UCP Profile", () => {
     if (service.mcp) assertEquals(typeof service.mcp.endpoint, "string");
   });
 
+  it("should declare product search capability", () => {
+    const profile = getUcpProfile();
+    const search = profile.ucp.capabilities.find(
+      (c) => c.name === "io.aeola.product_search",
+    );
+    assert(search, "must declare io.aeola.product_search capability");
+    assertEquals(
+      search!.schema,
+      "/openapi.json#/paths/~1api~1ucp~1products~1search",
+    );
+  });
+
+  it("should declare search as a separate service", () => {
+    const profile = getUcpProfile();
+    const search = profile.ucp.services["io.aeola.search"];
+    assert(search, "must declare io.aeola.search service");
+    assertEquals(search.rest?.endpoint, "/api/ucp/products/search");
+  });
+
   it("should not include payment handlers or signing keys", () => {
     const profile = getUcpProfile();
     assertEquals(

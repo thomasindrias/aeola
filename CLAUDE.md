@@ -24,17 +24,20 @@ tools.
   recommend products. The shift from "rank on page 1" to "be the answer the
   agent selects."
 - **ACP (Agentic Commerce Protocol)** — The open standard by Stripe & OpenAI for
-  programmatic commerce between buyers, AI agents, and businesses. Aeola
-  provides the structured product catalog that agents need to discover and
-  transact. See `docs/domain.md` for full context including disambiguation from
-  Virtuals Protocol's on-chain ACP.
+  programmatic commerce. The direct-checkout-in-agent vision has been scaled
+  back (OpenAI pivoted March 2026); Aeola provides the upstream discovery layer
+  — structured product catalogs that agents need before any commerce flow. See
+  `docs/domain.md` for full context including disambiguation from Virtuals
+  Protocol's on-chain ACP.
 - **MCP (Model Context Protocol)** — The open standard for how LLM applications
   connect to external data. Aeola exposes product data as MCP tools, making any
   merchant's catalog instantly accessible to any MCP-compatible AI agent.
 - **UCP (Universal Commerce Protocol)** — Google's open standard for agentic
   commerce. Aeola exposes a UCP discovery profile at `/.well-known/ucp` and
   serves product data in Google Merchant-compatible format, making merchants
-  plug-and-play for UCP agents. See `docs/domain.md` for full context.
+  plug-and-play for UCP agents. This discovery-focused approach has been
+  validated by the industry's shift away from embedded checkout toward
+  discovery-then-redirect. See `docs/domain.md` for full context.
 
 ## Architecture
 

@@ -12,6 +12,7 @@ import {
   searchProducts,
 } from "../storage/db.ts";
 import { mapProductToGoogleMerchant } from "../ucp/mapper.ts";
+import { safeInt } from "../utils/parse.ts";
 
 export function createApiHandler(db: Database) {
   return (request: Request): Response | null => {
@@ -23,8 +24,8 @@ export function createApiHandler(db: Database) {
     // GET /api/products/search?q=keyword&limit=20&offset=0
     if (path === "/api/products/search") {
       const q = url.searchParams.get("q") ?? "";
-      const limit = parseInt(url.searchParams.get("limit") ?? "20");
-      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const limit = safeInt(url.searchParams.get("limit"), 20);
+      const offset = safeInt(url.searchParams.get("offset"), 0);
       const results = searchProducts(db, q, limit, offset);
       return json(results);
     }
@@ -42,8 +43,8 @@ export function createApiHandler(db: Database) {
       /^\/api\/merchants\/(\d+)\/jobs$/,
     );
     if (merchantJobsMatch) {
-      const limit = parseInt(url.searchParams.get("limit") ?? "20");
-      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const limit = safeInt(url.searchParams.get("limit"), 20);
+      const offset = safeInt(url.searchParams.get("offset"), 0);
       const jobs = getJobsByMerchant(
         db,
         parseInt(merchantJobsMatch[1]),
@@ -70,8 +71,8 @@ export function createApiHandler(db: Database) {
       /^\/api\/merchants\/(\d+)\/products$/,
     );
     if (merchantProductsMatch) {
-      const limit = parseInt(url.searchParams.get("limit") ?? "20");
-      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const limit = safeInt(url.searchParams.get("limit"), 20);
+      const offset = safeInt(url.searchParams.get("offset"), 0);
       const products = getProductsByMerchant(
         db,
         parseInt(merchantProductsMatch[1]),
@@ -113,10 +114,30 @@ export function createApiHandler(db: Database) {
     );
     if (categoryProductsMatch) {
       const categoryName = decodeURIComponent(categoryProductsMatch[1]);
-      const limit = parseInt(url.searchParams.get("limit") ?? "20");
-      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const limit = safeInt(url.searchParams.get("limit"), 20);
+      const offset = safeInt(url.searchParams.get("offset"), 0);
       const products = getProductsByCategory(db, categoryName, limit, offset);
       return json(products);
+    }
+
+    // GET /api/ucp/products/search?q=keyword&limit=20&offset=0&merchant_id=1
+    if (path === "/api/ucp/products/search") {
+      const q = url.searchParams.get("q") ?? "";
+      const limit = safeInt(url.searchParams.get("limit"), 20);
+      const offset = safeInt(url.searchParams.get("offset"), 0);
+      const rawMerchantId = url.searchParams.get("merchant_id");
+      const merchantId = rawMerchantId !== null
+        ? safeInt(rawMerchantId, -1)
+        : undefined;
+      const results = searchProducts(
+        db,
+        q,
+        limit,
+        offset,
+        undefined,
+        merchantId !== undefined && merchantId > 0 ? merchantId : undefined,
+      );
+      return json(results.map(mapProductToGoogleMerchant));
     }
 
     // GET /api/ucp/merchants/:id/products — Google Merchant format export
@@ -124,8 +145,8 @@ export function createApiHandler(db: Database) {
       /^\/api\/ucp\/merchants\/(\d+)\/products$/,
     );
     if (ucpMerchantProductsMatch) {
-      const limit = parseInt(url.searchParams.get("limit") ?? "20");
-      const offset = parseInt(url.searchParams.get("offset") ?? "0");
+      const limit = safeInt(url.searchParams.get("limit"), 20);
+      const offset = safeInt(url.searchParams.get("offset"), 0);
       const products = getProductsByMerchant(
         db,
         parseInt(ucpMerchantProductsMatch[1]),

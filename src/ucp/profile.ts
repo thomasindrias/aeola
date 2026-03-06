@@ -43,6 +43,12 @@ export function getUcpProfile(): UcpProfile {
             endpoint: "/mcp",
           },
         },
+        "io.aeola.search": {
+          version: UCP_VERSION,
+          rest: {
+            endpoint: "/api/ucp/products/search",
+          },
+        },
       },
       capabilities: [
         {
@@ -50,6 +56,12 @@ export function getUcpProfile(): UcpProfile {
           version: UCP_VERSION,
           spec: "https://github.com/thomasindrias/aeola#ucp",
           schema: "/openapi.json#/components/schemas/GoogleMerchantProduct",
+        },
+        {
+          name: "io.aeola.product_search",
+          version: UCP_VERSION,
+          spec: "https://github.com/thomasindrias/aeola#ucp",
+          schema: "/openapi.json#/paths/~1api~1ucp~1products~1search",
         },
       ],
     },

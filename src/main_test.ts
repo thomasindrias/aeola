@@ -1,7 +1,7 @@
 import { afterEach, describe, it } from "@std/testing/bdd";
 import { assert, assertEquals } from "@std/assert";
 import { createHttpHandler } from "./main.ts";
-import { createDatabase } from "./storage/db.ts";
+import { addMerchant, addProduct, createDatabase } from "./storage/db.ts";
 
 describe("HTTP Server", () => {
   let db: ReturnType<typeof createDatabase>;
@@ -312,6 +312,38 @@ describe("HTTP Server", () => {
     });
     const response = await handler(new Request("http://localhost/"));
     assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
+  });
+
+  it("should return UCP search results through full handler with auth", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/1",
+      data: { name: "Widget", price: 9.99 },
+      schema: {},
+    });
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search?q=Widget", {
+        headers: { "Authorization": "Bearer test-api-key" },
+      }),
+    );
+    assertEquals(response.status, 200);
+    assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
+    const body = await response.json();
+    assertEquals(body.length, 1);
+    assertEquals(body[0].offerId, "1");
+    assertEquals(body[0].productAttributes.title, "Widget");
+  });
+
+  it("should reject UCP search without auth", async () => {
+    db = createDatabase(":memory:");
+    const handler = createHttpHandler(db, "test-api-key");
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search?q=test"),
+    );
+    assertEquals(response.status, 401);
   });
 
   it("should include pipeline section in landing page", async () => {

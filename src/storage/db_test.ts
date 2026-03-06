@@ -401,5 +401,26 @@ describe("Storage Layer", () => {
       assertEquals(results.length, 1);
       assertEquals(results[0].data.name, "Blue Widget");
     });
+
+    it("should filter search results by merchantId", () => {
+      db = createDatabase(":memory:");
+      const m1 = addMerchant(db, { url: "https://a.com", name: "A" });
+      const m2 = addMerchant(db, { url: "https://b.com", name: "B" });
+      addProduct(db, {
+        merchantId: m1,
+        sourceUrl: "https://a.com/p/1",
+        data: { name: "Widget" },
+        schema: {},
+      });
+      addProduct(db, {
+        merchantId: m2,
+        sourceUrl: "https://b.com/p/1",
+        data: { name: "Widget" },
+        schema: {},
+      });
+      const results = searchProducts(db, "Widget", 100, 0, undefined, m1);
+      assertEquals(results.length, 1);
+      assertEquals(results[0].merchantId, m1);
+    });
   });
 });

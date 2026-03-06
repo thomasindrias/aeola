@@ -1,6 +1,6 @@
 # Domain Knowledge
 
-> Last reviewed: 2026-03-05
+> Last reviewed: 2026-03-06
 
 ## Overview
 
@@ -68,13 +68,17 @@ Key capabilities:
 - Checkout sessions (create, update, complete, cancel)
 - Delegated payments via Stripe Shared Payment Tokens (PCI-compliant)
 - Physical/digital goods, subscriptions, async purchase flows
-- First adoption: OpenAI Instant Checkout in ChatGPT
+- Launched Sept 2025 as OpenAI Instant Checkout in ChatGPT; in March 2026,
+  OpenAI pivoted away from direct in-agent checkout due to low buying activity,
+  technical sync challenges, and fraud/compliance hurdles — purchases now route
+  through third-party retailer apps
 
 Stakeholder roles:
 
 - **Businesses**: maintain merchant-of-record status, control product selection
   and fulfillment through agent-facing endpoints
-- **AI Agents**: embed commerce without assuming merchant responsibility
+- **AI Agents**: discover and recommend products; transaction completion defers
+  to merchant checkout flows
 - **Payment Providers**: process agentic transactions via token exchange
 
 ### Virtuals Protocol ACP
@@ -85,10 +89,10 @@ from Stripe/OpenAI's ACP.
 
 ### Aeola's Relationship to ACP
 
-Aeola is upstream of ACP. Agents need structured product catalogs to transact —
-Aeola provides that catalog. Future integration: expose product data in
-ACP-compatible format so agents can discover products and initiate checkout
-sessions directly.
+Aeola is upstream of ACP. Agents need structured product catalogs before any
+commerce can happen — Aeola provides that catalog. The industry's convergence on
+discovery-then-redirect (rather than embedded checkout) validates Aeola's
+positioning as the data layer that sits before transaction flows.
 
 ## MCP (Model Context Protocol)
 
@@ -128,6 +132,32 @@ Aeola does not implement checkout, payment, or identity capabilities — it is t
 structured data source that sits upstream of transaction flows. The integration
 path: Aeola crawls and extracts product data → exports in Google Merchant format
 → UCP checkout agents reference products by ID in their line items.
+
+OpenAI's March 2026 pivot away from direct in-agent checkout validates UCP's
+separation of discovery from transaction. The emerging consensus: agents excel
+at finding and recommending products; merchants handle checkout in their own
+flows. UCP's modular capability model supports this cleanly — discovery
+capabilities operate independently of checkout capabilities.
+
+## Industry Context (March 2026)
+
+On March 5, 2026, OpenAI dropped direct checkout inside ChatGPT, citing low
+buying activity, technical sync challenges with real-time inventory/pricing, and
+fraud/compliance hurdles. Purchases now route to third-party retailer apps.
+
+This validates the discovery-first architecture that Aeola and UCP embody:
+
+- **Agents are good at discovery** — finding, comparing, and recommending
+  products based on user intent
+- **Merchants handle checkout** — inventory sync, payment processing, and
+  fulfillment remain in merchant-controlled flows
+- **The data layer is critical** — structured, agent-readable product catalogs
+  (what Aeola provides) are the foundation both discovery and eventual
+  transaction depend on
+
+ACP continues as a protocol standard, but the direct-checkout-in-agent vision
+has been scaled back across the industry. The convergence is toward
+discovery-then-redirect, which is exactly where Aeola sits.
 
 ## Glossary
 

@@ -224,19 +224,30 @@ export function searchProducts(
   limit = 100,
   offset = 0,
   category?: string,
+  merchantId?: number,
 ): Product[] {
   if (query.length > 500) {
     throw new Error("Search query too long (max 500 characters)");
   }
+  const escaped = query.replace(/[%_\\]/g, (ch) => `\\${ch}`);
+  const conditions = ["p.data LIKE ? ESCAPE '\\'"];
+  const params: (string | number)[] = [`%${escaped}%`];
   if (category) {
-    const rows = db.prepare(
-      "SELECT p.id, p.merchant_id as merchantId, p.source_url as sourceUrl, p.data, p.schema_def, p.created_at as createdAt FROM products p JOIN product_categories pc ON pc.product_id = p.id WHERE p.data LIKE ? AND pc.category = ? LIMIT ? OFFSET ?",
-    ).all<Record<string, unknown>>(`%${query}%`, category, limit, offset);
-    return rows.map(deserializeProduct);
+    conditions.push("pc.category = ?");
+    params.push(category);
   }
+  if (merchantId !== undefined) {
+    conditions.push("p.merchant_id = ?");
+    params.push(merchantId);
+  }
+  params.push(limit, offset);
+  const where = conditions.join(" AND ");
+  const join = category
+    ? " JOIN product_categories pc ON pc.product_id = p.id"
+    : "";
   const rows = db.prepare(
-    "SELECT id, merchant_id as merchantId, source_url as sourceUrl, data, schema_def, created_at as createdAt FROM products WHERE data LIKE ? LIMIT ? OFFSET ?",
-  ).all<Record<string, unknown>>(`%${query}%`, limit, offset);
+    `SELECT p.id, p.merchant_id as merchantId, p.source_url as sourceUrl, p.data, p.schema_def, p.created_at as createdAt FROM products p${join} WHERE ${where} LIMIT ? OFFSET ?`,
+  ).all<Record<string, unknown>>(...params);
   return rows.map(deserializeProduct);
 }
 

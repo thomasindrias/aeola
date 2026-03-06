@@ -11,6 +11,7 @@ import { addCorsHeaders, handlePreflight } from "./middleware/cors.ts";
 import { createApiHandler } from "./api/routes.ts";
 import { getOpenApiSpec } from "./api/openapi.ts";
 import { getUcpProfile } from "./ucp/profile.ts";
+import { safeInt } from "./utils/parse.ts";
 
 function constantTimeAuthCheck(
   authHeader: string | null,
@@ -242,7 +243,7 @@ if (import.meta.main) {
 
   const dbPath = Deno.env.get("DB_PATH") ?? "./aeola.db";
   const db = createDatabase(dbPath);
-  const rateLimitMax = parseInt(Deno.env.get("RATE_LIMIT") ?? "5");
+  const rateLimitMax = safeInt(Deno.env.get("RATE_LIMIT"), 5);
   const corsOrigin = Deno.env.get("CORS_ORIGINS") ?? "*";
   const stripeLink = Deno.env.get("STRIPE_PAYMENT_LINK") ?? "#";
   const landingPath = `${import.meta.dirname}/static/landing.html`;
@@ -259,7 +260,7 @@ if (import.meta.main) {
     corsOrigin,
     landingHtml,
   });
-  const port = parseInt(Deno.env.get("PORT") ?? "8000");
+  const port = safeInt(Deno.env.get("PORT"), 8000);
 
   log.info("server started", { port, dbPath });
   Deno.serve({ port }, handler);

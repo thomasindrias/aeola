@@ -8,6 +8,7 @@ describe("docs/domain.md", () => {
       "## AEO",
       "## ACP",
       "## MCP",
+      "## UCP",
       "## Glossary",
     ];
     for (const section of requiredSections) {

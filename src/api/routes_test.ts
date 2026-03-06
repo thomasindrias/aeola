@@ -286,6 +286,153 @@ describe("REST API", () => {
     assertEquals(body.length, 1);
   });
 
+  it("should return UCP search results in Google Merchant format", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/1",
+      data: { name: "Blue Widget", price: 19.99, currency: "USD" },
+      schema: {},
+    });
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search?q=Blue"),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(body.length, 1);
+    assertEquals(body[0].offerId, "1");
+    assertEquals(body[0].productAttributes.title, "Blue Widget");
+    assertEquals(body[0].productAttributes.price.value, "19.99");
+  });
+
+  it("should return UCP search results for empty query", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/1",
+      data: { name: "Widget" },
+      schema: {},
+    });
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search"),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(Array.isArray(body), true);
+  });
+
+  it("should return empty array for UCP search with no matches", async () => {
+    db = createDatabase(":memory:");
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search?q=nonexistent"),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(body.length, 0);
+  });
+
+  it("should support pagination on UCP search", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/1",
+      data: { name: "A" },
+      schema: {},
+    });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/2",
+      data: { name: "B" },
+      schema: {},
+    });
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search?limit=1"),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(body.length, 1);
+  });
+
+  it("should map UCP search results with correct price and availability", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/1",
+      data: {
+        name: "Fancy Item",
+        price: "$29.99",
+        availability: "in_stock",
+        color: "red",
+      },
+      schema: {},
+    });
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request("http://localhost/api/ucp/products/search?q=Fancy"),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(body[0].productAttributes.price.value, "29.99");
+    assertEquals(body[0].productAttributes.availability, "in_stock");
+    assertEquals(body[0].productAttributes.additionalAttributes.color, "red");
+  });
+
+  it("should filter UCP search by merchant_id", async () => {
+    db = createDatabase(":memory:");
+    const m1 = addMerchant(db, { url: "https://shop1.com", name: "Shop1" });
+    const m2 = addMerchant(db, { url: "https://shop2.com", name: "Shop2" });
+    addProduct(db, {
+      merchantId: m1,
+      sourceUrl: "https://shop1.com/p/1",
+      data: { name: "Widget" },
+      schema: {},
+    });
+    addProduct(db, {
+      merchantId: m2,
+      sourceUrl: "https://shop2.com/p/1",
+      data: { name: "Widget" },
+      schema: {},
+    });
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request(
+        `http://localhost/api/ucp/products/search?q=Widget&merchant_id=${m1}`,
+      ),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(body.length, 1);
+    assertEquals(body[0].link, "https://shop1.com/p/1");
+  });
+
+  it("should fall back to defaults for non-numeric limit/offset", async () => {
+    db = createDatabase(":memory:");
+    const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });
+    addProduct(db, {
+      merchantId: mid,
+      sourceUrl: "https://shop.com/p/1",
+      data: { name: "A" },
+      schema: {},
+    });
+    const handler = createApiHandler(db);
+    const response = await handler(
+      new Request(
+        "http://localhost/api/ucp/products/search?q=A&limit=abc&offset=xyz",
+      ),
+    );
+    assertEquals(response?.status, 200);
+    const body = await response!.json();
+    assertEquals(body.length, 1);
+  });
+
   it("should get categories for a merchant", async () => {
     db = createDatabase(":memory:");
     const mid = addMerchant(db, { url: "https://shop.com", name: "Shop" });

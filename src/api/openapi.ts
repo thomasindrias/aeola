@@ -552,6 +552,54 @@ export function getOpenApiSpec() {
           },
         },
       },
+      "/api/ucp/products/search": {
+        get: {
+          summary: "Search products in Google Merchant format",
+          description:
+            "Search across all products and return results in Google Merchant-compatible " +
+            "format for UCP agent consumption.",
+          parameters: [
+            {
+              name: "q",
+              in: "query",
+              schema: { type: "string", default: "" },
+              description: "Search keyword",
+            },
+            {
+              name: "merchant_id",
+              in: "query",
+              schema: { type: "integer" },
+              description: "Filter results to a specific merchant",
+            },
+            {
+              name: "limit",
+              in: "query",
+              schema: { type: "integer", default: 20 },
+            },
+            {
+              name: "offset",
+              in: "query",
+              schema: { type: "integer", default: 0 },
+            },
+          ],
+          responses: {
+            "200": {
+              description:
+                "Array of matching products in Google Merchant format",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/GoogleMerchantProduct",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       "/api/ucp/products/{id}": {
         get: {
           summary: "Get product in Google Merchant format",
